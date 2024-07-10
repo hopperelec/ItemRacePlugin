@@ -1,0 +1,11 @@
+name: ${project.name}
+version: ${project.version}
+main: uk.co.hopperelec.mc.itemrace.ItemRacePlugin
+prefix: AntiDamage
+authors: [ hopperelec ]
+description: ${project.description}
+api-version: 1.21
+
+commands:
+  itemrace:
+    description: Core command for the ItemRace plugin
