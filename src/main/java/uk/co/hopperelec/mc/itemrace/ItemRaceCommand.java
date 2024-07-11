@@ -5,8 +5,6 @@ import co.aikar.commands.CommandHelp;
 import co.aikar.commands.annotation.*;
 import fr.minuskube.inv.SmartInventory;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import net.kyori.adventure.translation.GlobalTranslator;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
@@ -18,6 +16,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import static org.bukkit.Bukkit.getScoreboardManager;
+import static uk.co.hopperelec.mc.itemrace.ItemRaceUtils.serializeTranslatable;
 
 @CommandAlias("itemrace")
 public class ItemRaceCommand extends BaseCommand {
@@ -158,13 +157,11 @@ public class ItemRaceCommand extends BaseCommand {
                 .manager(plugin.inventoryManager)
                 .title(
                         // SmartInventories doesn't support Adventure components
-                        PlainTextComponentSerializer.plainText().serialize(
-                                GlobalTranslator.render(
-                                        Component.translatable(
-                                                "inventory.title",
-                                                Component.text(Objects.requireNonNull(player.getName()))
-                                        ), sender.locale()
-                                )
+                        serializeTranslatable(
+                                Component.translatable(
+                                        "inventory.title",
+                                        Component.text(Objects.requireNonNull(player.getName()))
+                                ), sender.locale()
                         )
                 ).build();
         inventoryProvider.setInventory(inventory);

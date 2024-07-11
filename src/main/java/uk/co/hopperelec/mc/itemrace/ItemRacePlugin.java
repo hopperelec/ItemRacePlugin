@@ -27,11 +27,27 @@ public final class ItemRacePlugin extends JavaPlugin {
     public Objective scoreboardObjective;
     public final InventoryManager inventoryManager = new InventoryManager(this);
 
+    public ItemRacePlugin() {
+        // Load translations
+        final TranslationRegistry registry = TranslationRegistry.create(Key.key("namespace:value"));
+        registry.registerAll(
+                Locale.US,
+                ResourceBundle.getBundle(
+                        "uk.co.hopperelec.mc.itemrace.en_US",
+                        Locale.US, UTF8ResourceBundleControl.get()
+                ),
+                true
+        );
+        GlobalTranslator.translator().addSource(registry);
+    }
+
     @Override
     public void onEnable() {
-        final PaperCommandManager commandManager = new PaperCommandManager(this);
-
+        // Initialize inventory for `/itemrace inventory`
         inventoryManager.init();
+
+        // Load commands
+        final PaperCommandManager commandManager = new PaperCommandManager(this);
         commandManager.registerCommand(new ItemRaceCommand(this));
         commandManager.enableUnstableAPI("help");
         commandManager.getCommandCompletions().registerCompletion(
@@ -45,21 +61,14 @@ public final class ItemRacePlugin extends JavaPlugin {
                         .toList()
         );
 
+        // Create scoreboard
         scoreboard = getServer().getScoreboardManager().getNewScoreboard();
-        scoreboardObjective = scoreboard.registerNewObjective("score",
-                Criteria.DUMMY, Component.translatable("scoreboard.title", Style.style(TextDecoration.BOLD)));
-        scoreboardObjective.setDisplaySlot(DisplaySlot.SIDEBAR);
-
-        final TranslationRegistry registry = TranslationRegistry.create(Key.key("namespace:value"));
-        registry.registerAll(
-                Locale.US,
-                ResourceBundle.getBundle(
-                        "uk.co.hopperelec.mc.itemrace.en_US",
-                        Locale.US, UTF8ResourceBundleControl.get()
-                ),
-                true
+        scoreboardObjective = scoreboard.registerNewObjective(
+                "score",
+                Criteria.DUMMY,
+                Component.translatable("scoreboard.title", Style.style(TextDecoration.BOLD))
         );
-        GlobalTranslator.translator().addSource(registry);
+        scoreboardObjective.setDisplaySlot(DisplaySlot.SIDEBAR);
     }
 
     private int calculateScore(@NotNull OfflinePlayer player) {
