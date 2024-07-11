@@ -3,6 +3,7 @@ package uk.co.hopperelec.mc.itemrace;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.CommandHelp;
 import co.aikar.commands.annotation.*;
+import fr.minuskube.inv.SmartInventory;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -79,12 +80,20 @@ public class ItemRaceCommand extends BaseCommand {
             currentAmountDeposited = plugin.depositedItems.get(player).getOrDefault(itemType, 0);
         }
         plugin.depositedItems.get(player).put(itemType, currentAmountDeposited + amount);
-        player.sendMessage("Deposited "+amount+" "+itemType.name().toLowerCase());
+        player.sendMessage("Deposited "+amount+" "+ItemRaceUtils.getMaterialDisplayName(itemType));
     }
 
     @Subcommand("inventory|inv")
     public void onInventory(@NotNull Player sender, @Optional @Name("player") OfflinePlayer player) {
-        // TODO
+        if (player == null) player = sender;
+        final ItemRaceInventoryProvider inventoryProvider = new ItemRaceInventoryProvider(plugin, player);
+        final SmartInventory inventory = SmartInventory.builder()
+                .provider(inventoryProvider)
+                .manager(plugin.inventoryManager)
+                .title(player.getName()+"'s ItemRace inventory")
+                .build();
+        inventoryProvider.setInventory(inventory);
+        inventory.open(sender);
     }
 
     @Subcommand("leaderboard|lb")
