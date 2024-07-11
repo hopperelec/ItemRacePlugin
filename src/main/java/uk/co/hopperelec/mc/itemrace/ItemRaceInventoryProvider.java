@@ -21,18 +21,21 @@ public class ItemRaceInventoryProvider implements InventoryProvider {
     private final ItemRacePlugin plugin;
     private final OfflinePlayer player;
     private SmartInventory inventory;
-    private static final ItemStack NEXT_ARROW = new ItemStack(Material.ARROW);
-    private static final ItemStack PREVIOUS_ARROW = new ItemStack(Material.ARROW);
+    private static final ItemStack NEXT_ARROW = createArrow("inventory.next");
+    private static final ItemStack PREVIOUS_ARROW = createArrow("inventory.previous");
+
+    @NotNull
+    private static ItemStack createArrow(@NotNull String nameKey) {
+        final ItemStack itemStack = new ItemStack(Material.ARROW);
+        final ItemMeta itemMeta = itemStack.getItemMeta();
+        itemMeta.itemName(Component.translatable(nameKey));
+        itemStack.setItemMeta(itemMeta);
+        return itemStack;
+    }
 
     public ItemRaceInventoryProvider(@NotNull ItemRacePlugin plugin, @NotNull OfflinePlayer player) {
-        final ItemMeta nextItemMeta = NEXT_ARROW.getItemMeta();
-        final ItemMeta previousItemMeta = PREVIOUS_ARROW.getItemMeta();
         this.plugin = plugin;
         this.player = player;
-        nextItemMeta.itemName(Component.text("Next page"));
-        NEXT_ARROW.setItemMeta(nextItemMeta);
-        previousItemMeta.itemName(Component.text("Previous page"));
-        NEXT_ARROW.setItemMeta(previousItemMeta);
     }
 
     public void setInventory(@NotNull SmartInventory inventory) {
@@ -49,10 +52,11 @@ public class ItemRaceInventoryProvider implements InventoryProvider {
                             .map(entry -> {
                                 final ItemStack itemStack = new ItemStack(entry.getKey(), entry.getValue());
                                 final ItemMeta itemMeta = itemStack.getItemMeta();
-                                itemMeta.itemName(
-                                        Component.text(ItemRaceUtils.getMaterialDisplayName(itemStack.getType()))
-                                                .append(Component.text(" x" + entry.getValue()))
-                                );
+                                itemMeta.itemName(Component.translatable(
+                                        "inventory.itemname",
+                                        Component.translatable(itemStack.getType().translationKey()),
+                                        Component.text(entry.getValue())
+                                ));
                                 itemStack.setItemMeta(itemMeta);
                                 return ClickableItem.empty(itemStack);
                             })
@@ -63,12 +67,12 @@ public class ItemRaceInventoryProvider implements InventoryProvider {
         pagination.addToIterator(contents.newIterator(SlotIterator.Type.HORIZONTAL, 0, 0));
         if (!pagination.isFirst())
             contents.set(5, 3, ClickableItem.of(
-                    NEXT_ARROW,
+                    PREVIOUS_ARROW,
                     e -> inventory.open(viewer, pagination.previous().getPage()))
             );
         if (!pagination.isLast())
             contents.set(5, 5, ClickableItem.of(
-                    PREVIOUS_ARROW,
+                    NEXT_ARROW,
                     e -> inventory.open(viewer, pagination.next().getPage()))
             );
     }

@@ -30,11 +30,6 @@ public final class ItemRacePlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         final PaperCommandManager commandManager = new PaperCommandManager(this);
-        final TranslationRegistry registry = TranslationRegistry.create(Key.key("namespace:value"));
-        final ResourceBundle bundle = ResourceBundle.getBundle(
-                "uk.co.hopperelec.mc.itemrace.en_US",
-                Locale.US, UTF8ResourceBundleControl.get()
-        );
 
         inventoryManager.init();
         commandManager.registerCommand(new ItemRaceCommand(this));
@@ -52,10 +47,18 @@ public final class ItemRacePlugin extends JavaPlugin {
 
         scoreboard = getServer().getScoreboardManager().getNewScoreboard();
         scoreboardObjective = scoreboard.registerNewObjective("score",
-                Criteria.DUMMY, Component.text("ItemRace score", Style.style(TextDecoration.BOLD)));
+                Criteria.DUMMY, Component.translatable("scoreboard.title", Style.style(TextDecoration.BOLD)));
         scoreboardObjective.setDisplaySlot(DisplaySlot.SIDEBAR);
 
-        registry.registerAll(Locale.US, bundle, true);
+        final TranslationRegistry registry = TranslationRegistry.create(Key.key("namespace:value"));
+        registry.registerAll(
+                Locale.US,
+                ResourceBundle.getBundle(
+                        "uk.co.hopperelec.mc.itemrace.en_US",
+                        Locale.US, UTF8ResourceBundleControl.get()
+                ),
+                true
+        );
         GlobalTranslator.translator().addSource(registry);
     }
 

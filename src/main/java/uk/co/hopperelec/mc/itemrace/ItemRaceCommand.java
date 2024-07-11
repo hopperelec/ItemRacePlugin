@@ -5,6 +5,8 @@ import co.aikar.commands.CommandHelp;
 import co.aikar.commands.annotation.*;
 import fr.minuskube.inv.SmartInventory;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import net.kyori.adventure.translation.GlobalTranslator;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
@@ -31,7 +33,7 @@ public class ItemRaceCommand extends BaseCommand {
     }
 
     @Subcommand("reset")
-    @CommandCompletion("@player")
+    @CommandCompletion("@players")
     public void onReset(@NotNull CommandSender sender, @Optional @Name("player") OfflinePlayer player) {
         if (player == null) {
             plugin.resetDepositedItems();
@@ -65,7 +67,7 @@ public class ItemRaceCommand extends BaseCommand {
             if (amountInt == 0) {
                 player.sendMessage(Component.translatable(
                         "command.deposit.all.none",
-                        Component.text(ItemRaceUtils.getMaterialDisplayName(itemType))
+                        Component.translatable(itemType.translationKey())
                 ));
                 return;
             }
@@ -75,7 +77,7 @@ public class ItemRaceCommand extends BaseCommand {
                     Component.translatable(
                             "command.deposit.all.success",
                             Component.text(amountInt),
-                            Component.text(ItemRaceUtils.getMaterialDisplayName(itemType))
+                            Component.translatable(itemType.translationKey())
                     )
             );
 
@@ -141,27 +143,37 @@ public class ItemRaceCommand extends BaseCommand {
             plugin.depositItems(player, itemType, amountInt);
             player.sendMessage(Component.translatable("command.deposit.specific.success",
                     Component.text(amountInt),
-                    Component.text(ItemRaceUtils.getMaterialDisplayName(itemType))
+                    Component.translatable(itemType.translationKey())
             ));
         }
     }
 
     @Subcommand("inventory|inv")
+    @CommandCompletion("@players")
     public void onInventory(@NotNull Player sender, @Optional @Name("player") OfflinePlayer player) {
         if (player == null) player = sender;
         final ItemRaceInventoryProvider inventoryProvider = new ItemRaceInventoryProvider(plugin, player);
         final SmartInventory inventory = SmartInventory.builder()
                 .provider(inventoryProvider)
                 .manager(plugin.inventoryManager)
-                .title(player.getName() + "'s ItemRace inventory")
-                .build();
+                .title(
+                        // SmartInventories doesn't support Adventure components
+                        PlainTextComponentSerializer.plainText().serialize(
+                                GlobalTranslator.render(
+                                        Component.translatable(
+                                                "inventory.title",
+                                                Component.text(Objects.requireNonNull(player.getName()))
+                                        ), sender.locale()
+                                )
+                        )
+                ).build();
         inventoryProvider.setInventory(inventory);
         inventory.open(sender);
     }
 
     @Subcommand("leaderboard|lb")
     public void onLeaderboard(@NotNull CommandSender sender) {
-        sender.sendMessage("=== ItemRace Leaderboard ===");
+        sender.sendMessage(Component.translatable("command.leaderboard.header"));
         if (plugin.hasDepositedItems()) {
             final Map<OfflinePlayer, Integer> scores = plugin.calculateScores();
             int position = 1;
@@ -187,7 +199,7 @@ public class ItemRaceCommand extends BaseCommand {
         } else {
             sender.sendMessage(Component.translatable("command.leaderboard.empty"));
         }
-        sender.sendMessage("==========================");
+        sender.sendMessage(Component.translatable("command.leaderboard.footer"));
     }
 
     @Subcommand("togglescoreboard|tsb")
