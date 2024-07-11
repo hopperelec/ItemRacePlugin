@@ -2,9 +2,13 @@ package uk.co.hopperelec.mc.itemrace;
 
 import co.aikar.commands.PaperCommandManager;
 import fr.minuskube.inv.InventoryManager;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.translation.GlobalTranslator;
+import net.kyori.adventure.translation.TranslationRegistry;
+import net.kyori.adventure.util.UTF8ResourceBundleControl;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.inventory.ItemStack;
@@ -15,10 +19,7 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public final class ItemRacePlugin extends JavaPlugin {
     private final Map<OfflinePlayer, Map<Material, Integer>> depositedItems = new HashMap<>();
@@ -28,9 +29,13 @@ public final class ItemRacePlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        inventoryManager.init();
-
         final PaperCommandManager commandManager = new PaperCommandManager(this);
+        final TranslationRegistry registry = TranslationRegistry.create(Key.key("namespace:value"));
+        final ResourceBundle bundle = ResourceBundle.getBundle("uk.co.hopperelec.mc.itemrace.en_US",
+                Locale.US, UTF8ResourceBundleControl.get()
+        );
+
+        inventoryManager.init();
         commandManager.registerCommand(new ItemRaceCommand(this));
         commandManager.enableUnstableAPI("help");
         commandManager.getCommandCompletions().registerCompletion(
@@ -48,6 +53,9 @@ public final class ItemRacePlugin extends JavaPlugin {
         scoreboardObjective = scoreboard.registerNewObjective("score",
                 Criteria.DUMMY, Component.text("ItemRace score", Style.style(TextDecoration.BOLD)));
         scoreboardObjective.setDisplaySlot(DisplaySlot.SIDEBAR);
+
+        registry.registerAll(Locale.US, bundle, true);
+        GlobalTranslator.translator().addSource(registry);
     }
 
     private int calculateScore(@NotNull OfflinePlayer player) {

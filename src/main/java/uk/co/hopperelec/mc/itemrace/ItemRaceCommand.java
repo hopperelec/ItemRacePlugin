@@ -35,13 +35,16 @@ public class ItemRaceCommand extends BaseCommand {
     public void onReset(@NotNull CommandSender sender, @Optional @Name("player") OfflinePlayer player) {
         if (player == null) {
             plugin.resetDepositedItems();
-            sender.sendMessage("Cleared all deposited items");
+            sender.sendMessage(Component.translatable("deposited.cleared.all"));
         } else {
             plugin.resetDepositedItems(player);
-            sender.sendMessage(
-                    Component.text("Cleared all items deposited by ")
-                            .append(Component.text(Objects.requireNonNull(player.getName())))
-            );
+
+            if (player.getName() != null) {
+                sender.sendMessage(
+                        Component.translatable("deposited.cleared.player",
+                                Component.text(player.getName()))
+                );
+            }
         }
     }
 
@@ -52,29 +55,27 @@ public class ItemRaceCommand extends BaseCommand {
         if (Objects.equals(amountStr, "all")) {
             if (itemType == null) itemType = player.getInventory().getItemInMainHand().getType();
             if (itemType.isAir()) {
-                player.sendMessage("You cannot deposit air!");
+                player.sendMessage(Component.translatable("item.air.deposit"));
                 return;
             }
             final int amountInt = player.getInventory().all(itemType).values().stream()
                     .map(ItemStack::getAmount)
                     .reduce(0, Integer::sum);
             if (amountInt == 0) {
-                player.sendMessage(String.format(
-                        "You do not have any %s",
-                        ItemRaceUtils.getMaterialDisplayName(itemType)
-                ));
+                player.sendMessage(Component.translatable("item.type.insufficient",
+                        Component.text(ItemRaceUtils.getMaterialDisplayName(itemType))));
                 return;
             }
             player.getInventory().remove(itemType);
             plugin.depositItems(player, itemType, amountInt);
             player.sendMessage(
-                    String.format("Deposited all (%s) %s in your inventory",
-                            amountInt,
-                            ItemRaceUtils.getMaterialDisplayName(itemType))
+                    Component.translatable("inventory.deposited.all.items",
+                            Component.text(amountInt),
+                            Component.text(ItemRaceUtils.getMaterialDisplayName(itemType)))
             );
         } else if (Objects.equals(amountStr, "inventory")) {
             if (itemType != null) {
-                player.sendMessage("You cannot specify an item type when depositing your inventory");
+                player.sendMessage(Component.translatable("inventory.invalid.item.type"));
                 return;
             }
             for (ItemStack item : player.getInventory().getStorageContents()) {
@@ -83,7 +84,7 @@ public class ItemRaceCommand extends BaseCommand {
                     item.setAmount(0);
                 }
             }
-            player.sendMessage("Deposited all items in your inventory");
+            player.sendMessage(Component.translatable("inventory.deposited"));
         } else {
             int amountInt = -1;
             boolean removedItems = false;
@@ -96,7 +97,7 @@ public class ItemRaceCommand extends BaseCommand {
                 }
             }
             if (itemType.isAir()) {
-                player.sendMessage("You cannot deposit air!");
+                player.sendMessage(Component.translatable("item.air.deposit"));
                 return;
             }
             if (amountInt == -1) {
@@ -104,13 +105,13 @@ public class ItemRaceCommand extends BaseCommand {
                     amountInt = Integer.parseInt(amountStr);
                 } catch (NumberFormatException e) {
                     player.sendMessage(
-                            String.format("Amount must be either 'all', 'inventory' or a number, not %s", amountInt)
+                            Component.translatable("item.input.invalid", Component.text(amountInt))
                     );
                     return;
                 }
             }
             if (amountInt <= 0) {
-                player.sendMessage("You cannot deposit 0 items!");
+                player.sendMessage(Component.translatable("item.invalid.stack"));
                 return;
             }
             if (!removedItems) {
@@ -120,9 +121,13 @@ public class ItemRaceCommand extends BaseCommand {
                 if (!itemsNotRemoved.isEmpty()) {
                     int amountNotRemoved = itemsNotRemoved.get(0).getAmount();
                     if (amountInt == amountNotRemoved) {
+
                         player.sendMessage(
-                                String.format("You do not have %s %s to deposit!",
-                                        amountInt, itemType.name())
+                                Component.translatable(
+                                        "item.insufficient",
+                                        Component.text(amountInt),
+                                        Component.text(itemType.name())
+                                )
                         );
                         return;
                     }
@@ -131,10 +136,11 @@ public class ItemRaceCommand extends BaseCommand {
             }
 
             plugin.depositItems(player, itemType, amountInt);
+
             player.sendMessage(
-                    String.format("Deposited %s %s",
-                            amountInt,
-                            ItemRaceUtils.getMaterialDisplayName(itemType)
+                    Component.translatable("item.deposited",
+                            Component.text(amountInt),
+                            Component.text(ItemRaceUtils.getMaterialDisplayName(itemType))
                     )
             );
         }
@@ -173,10 +179,10 @@ public class ItemRaceCommand extends BaseCommand {
             }
             if (sender instanceof Player) {
                 sender.sendMessage("");
-                sender.sendMessage("You are position " + scores.get(sender));
+                sender.sendMessage(Component.translatable("player.position", Component.text(scores.get(sender))));
             }
         } else {
-            sender.sendMessage("Nobody has deposited any items yet");
+            sender.sendMessage(Component.translatable("deposits.empty"));
         }
         sender.sendMessage("==========================");
     }
