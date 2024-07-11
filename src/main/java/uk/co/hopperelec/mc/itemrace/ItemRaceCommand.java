@@ -47,7 +47,8 @@ public class ItemRaceCommand extends BaseCommand {
 
     @Subcommand("deposit|dep")
     @CommandCompletion("all|inventory @itemType")
-    public void onDeposit(@NotNull Player player, @Optional @Name("amount") String amountStr, @Optional @Name("item") Material itemType) {
+    public void onDeposit(@NotNull Player player, @Optional @Name("amount") String amountStr,
+                          @Optional @Name("item") Material itemType) {
         if (Objects.equals(amountStr, "all")) {
             if (itemType == null) itemType = player.getInventory().getItemInMainHand().getType();
             if (itemType.isAir()) {
@@ -58,12 +59,19 @@ public class ItemRaceCommand extends BaseCommand {
                     .map(ItemStack::getAmount)
                     .reduce(0, Integer::sum);
             if (amountInt == 0) {
-                player.sendMessage("You do not have any "+ItemRaceUtils.getMaterialDisplayName(itemType)+" to deposit!");
+                player.sendMessage(String.format(
+                        "You do not have any %s",
+                        ItemRaceUtils.getMaterialDisplayName(itemType)
+                ));
                 return;
             }
             player.getInventory().remove(itemType);
             plugin.depositItems(player, itemType, amountInt);
-            player.sendMessage("Deposited all ("+amountInt+") "+ItemRaceUtils.getMaterialDisplayName(itemType)+" in your inventory");
+            player.sendMessage(
+                    String.format("Deposited all (%s) %s in your inventory",
+                            amountInt,
+                            ItemRaceUtils.getMaterialDisplayName(itemType))
+            );
         } else if (Objects.equals(amountStr, "inventory")) {
             if (itemType != null) {
                 player.sendMessage("You cannot specify an item type when depositing your inventory");
@@ -95,7 +103,9 @@ public class ItemRaceCommand extends BaseCommand {
                 try {
                     amountInt = Integer.parseInt(amountStr);
                 } catch (NumberFormatException e) {
-                    player.sendMessage("Amount must be either 'all', 'inventory' or a number, not "+amountStr);
+                    player.sendMessage(
+                            String.format("Amount must be either 'all', 'inventory' or a number, not %s", amountInt)
+                    );
                     return;
                 }
             }
@@ -104,18 +114,29 @@ public class ItemRaceCommand extends BaseCommand {
                 return;
             }
             if (!removedItems) {
-                Map<Integer, ItemStack> itemsNotRemoved = player.getInventory().removeItem(new ItemStack(itemType, amountInt));
+                Map<Integer, ItemStack> itemsNotRemoved = player.getInventory()
+                        .removeItem(new ItemStack(itemType, amountInt));
+
                 if (!itemsNotRemoved.isEmpty()) {
                     int amountNotRemoved = itemsNotRemoved.get(0).getAmount();
                     if (amountInt == amountNotRemoved) {
-                        player.sendMessage("You do not have "+amountInt+" "+itemType.name()+" to deposit!");
+                        player.sendMessage(
+                                String.format("You do not have %s %s to deposit!",
+                                        amountInt, itemType.name())
+                        );
                         return;
                     }
                     amountInt -= amountNotRemoved;
                 }
             }
+
             plugin.depositItems(player, itemType, amountInt);
-            player.sendMessage("Deposited "+amountInt+" "+ItemRaceUtils.getMaterialDisplayName(itemType));
+            player.sendMessage(
+                    String.format("Deposited %s %s",
+                            amountInt,
+                            ItemRaceUtils.getMaterialDisplayName(itemType)
+                    )
+            );
         }
     }
 
@@ -126,7 +147,7 @@ public class ItemRaceCommand extends BaseCommand {
         final SmartInventory inventory = SmartInventory.builder()
                 .provider(inventoryProvider)
                 .manager(plugin.inventoryManager)
-                .title(player.getName()+"'s ItemRace inventory")
+                .title(player.getName() + "'s ItemRace inventory")
                 .build();
         inventoryProvider.setInventory(inventory);
         inventory.open(sender);
@@ -152,7 +173,7 @@ public class ItemRaceCommand extends BaseCommand {
             }
             if (sender instanceof Player) {
                 sender.sendMessage("");
-                sender.sendMessage("You are position "+scores.get(sender));
+                sender.sendMessage("You are position " + scores.get(sender));
             }
         } else {
             sender.sendMessage("Nobody has deposited any items yet");

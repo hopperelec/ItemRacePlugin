@@ -25,12 +25,12 @@ public class ItemRaceInventoryProvider implements InventoryProvider {
     private static final ItemStack PREVIOUS_ARROW = new ItemStack(Material.ARROW);
 
     public ItemRaceInventoryProvider(@NotNull ItemRacePlugin plugin, @NotNull OfflinePlayer player) {
+        final ItemMeta nextItemMeta = NEXT_ARROW.getItemMeta();
+        final ItemMeta previousItemMeta = PREVIOUS_ARROW.getItemMeta();
         this.plugin = plugin;
         this.player = player;
-        final ItemMeta nextItemMeta = NEXT_ARROW.getItemMeta();
         nextItemMeta.itemName(Component.text("Next page"));
         NEXT_ARROW.setItemMeta(nextItemMeta);
-        final ItemMeta previousItemMeta = PREVIOUS_ARROW.getItemMeta();
         previousItemMeta.itemName(Component.text("Previous page"));
         NEXT_ARROW.setItemMeta(previousItemMeta);
     }

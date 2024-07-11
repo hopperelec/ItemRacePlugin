@@ -45,7 +45,8 @@ public final class ItemRacePlugin extends JavaPlugin {
         );
 
         scoreboard = getServer().getScoreboardManager().getNewScoreboard();
-        scoreboardObjective = scoreboard.registerNewObjective("score", Criteria.DUMMY, Component.text("ItemRace score", Style.style(TextDecoration.BOLD)));
+        scoreboardObjective = scoreboard.registerNewObjective("score",
+                Criteria.DUMMY, Component.text("ItemRace score", Style.style(TextDecoration.BOLD)));
         scoreboardObjective.setDisplaySlot(DisplaySlot.SIDEBAR);
     }
 
