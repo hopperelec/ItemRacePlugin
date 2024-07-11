@@ -35,15 +35,14 @@ public class ItemRaceCommand extends BaseCommand {
     public void onReset(@NotNull CommandSender sender, @Optional @Name("player") OfflinePlayer player) {
         if (player == null) {
             plugin.resetDepositedItems();
-            sender.sendMessage(Component.translatable("deposited.cleared.all"));
+            sender.sendMessage(Component.translatable("command.reset.all"));
         } else {
             plugin.resetDepositedItems(player);
-
             if (player.getName() != null) {
-                sender.sendMessage(
-                        Component.translatable("deposited.cleared.player",
-                                Component.text(player.getName()))
-                );
+                sender.sendMessage(Component.translatable(
+                        "command.reset.player",
+                        Component.text(player.getName())
+                ));
             }
         }
     }
@@ -57,27 +56,32 @@ public class ItemRaceCommand extends BaseCommand {
         if (Objects.equals(amountStr, "all")) {
             if (itemType == null) itemType = player.getInventory().getItemInMainHand().getType();
             if (itemType.isAir()) {
-                player.sendMessage(Component.translatable("item.air.deposit"));
+                player.sendMessage(Component.translatable("command.deposit.itemtype.air"));
                 return;
             }
             final int amountInt = player.getInventory().all(itemType).values().stream()
                     .map(ItemStack::getAmount)
                     .reduce(0, Integer::sum);
             if (amountInt == 0) {
-                player.sendMessage(Component.translatable("item.type.insufficient",
-                        Component.text(ItemRaceUtils.getMaterialDisplayName(itemType))));
+                player.sendMessage(Component.translatable(
+                        "command.deposit.all.none",
+                        Component.text(ItemRaceUtils.getMaterialDisplayName(itemType))
+                ));
                 return;
             }
             player.getInventory().remove(itemType);
             plugin.depositItems(player, itemType, amountInt);
             player.sendMessage(
-                    Component.translatable("inventory.deposited.all.items",
+                    Component.translatable(
+                            "command.deposit.all.success",
                             Component.text(amountInt),
-                            Component.text(ItemRaceUtils.getMaterialDisplayName(itemType)))
+                            Component.text(ItemRaceUtils.getMaterialDisplayName(itemType))
+                    )
             );
+
         } else if (Objects.equals(amountStr, "inventory")) {
             if (itemType != null) {
-                player.sendMessage(Component.translatable("inventory.invalid.item.type"));
+                player.sendMessage(Component.translatable("command.deposit.inventory.itemtype"));
                 return;
             }
             for (ItemStack item : player.getInventory().getStorageContents()) {
@@ -86,7 +90,8 @@ public class ItemRaceCommand extends BaseCommand {
                     item.setAmount(0);
                 }
             }
-            player.sendMessage(Component.translatable("inventory.deposited"));
+            player.sendMessage(Component.translatable("command.deposit.inventory.success"));
+
         } else {
             int amountInt = -1;
             boolean removedItems = false;
@@ -99,52 +104,45 @@ public class ItemRaceCommand extends BaseCommand {
                 }
             }
             if (itemType.isAir()) {
-                player.sendMessage(Component.translatable("item.air.deposit"));
+                player.sendMessage(Component.translatable("command.deposit.itemtype.air"));
                 return;
             }
             if (amountInt == -1) {
                 try {
                     amountInt = Integer.parseInt(amountStr);
                 } catch (NumberFormatException e) {
-                    player.sendMessage(
-                            Component.translatable("item.input.invalid", Component.text(amountInt))
+                    player.sendMessage(Component.translatable(
+                            "command.deposit.amount.invalid",
+                            Component.text(amountInt))
                     );
                     return;
                 }
             }
             if (amountInt <= 0) {
-                player.sendMessage(Component.translatable("item.invalid.stack"));
+                player.sendMessage(Component.translatable("command.deposit.amount.zero"));
                 return;
             }
             if (!removedItems) {
                 Map<Integer, ItemStack> itemsNotRemoved = player.getInventory()
                         .removeItem(new ItemStack(itemType, amountInt));
-
                 if (!itemsNotRemoved.isEmpty()) {
                     int amountNotRemoved = itemsNotRemoved.get(0).getAmount();
                     if (amountInt == amountNotRemoved) {
-
-                        player.sendMessage(
-                                Component.translatable(
-                                        "item.insufficient",
-                                        Component.text(amountInt),
-                                        Component.text(itemType.name())
-                                )
-                        );
+                        player.sendMessage(Component.translatable(
+                                    "command.deposit.amount.insufficient",
+                                    Component.text(amountInt),
+                                    Component.text(itemType.name())
+                        ));
                         return;
                     }
                     amountInt -= amountNotRemoved;
                 }
             }
-
             plugin.depositItems(player, itemType, amountInt);
-
-            player.sendMessage(
-                    Component.translatable("item.deposited",
-                            Component.text(amountInt),
-                            Component.text(ItemRaceUtils.getMaterialDisplayName(itemType))
-                    )
-            );
+            player.sendMessage(Component.translatable("command.deposit.specific.success",
+                    Component.text(amountInt),
+                    Component.text(ItemRaceUtils.getMaterialDisplayName(itemType))
+            ));
         }
     }
 
@@ -181,10 +179,13 @@ public class ItemRaceCommand extends BaseCommand {
             }
             if (sender instanceof Player) {
                 sender.sendMessage("");
-                sender.sendMessage(Component.translatable("player.position", Component.text(scores.get(sender))));
+                sender.sendMessage(Component.translatable(
+                        "command.leaderboard.position",
+                        Component.text(scores.get(sender)))
+                );
             }
         } else {
-            sender.sendMessage(Component.translatable("deposits.empty"));
+            sender.sendMessage(Component.translatable("command.leaderboard.empty"));
         }
         sender.sendMessage("==========================");
     }

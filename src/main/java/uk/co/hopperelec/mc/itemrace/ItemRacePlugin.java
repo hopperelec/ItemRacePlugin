@@ -31,7 +31,8 @@ public final class ItemRacePlugin extends JavaPlugin {
     public void onEnable() {
         final PaperCommandManager commandManager = new PaperCommandManager(this);
         final TranslationRegistry registry = TranslationRegistry.create(Key.key("namespace:value"));
-        final ResourceBundle bundle = ResourceBundle.getBundle("uk.co.hopperelec.mc.itemrace.en_US",
+        final ResourceBundle bundle = ResourceBundle.getBundle(
+                "uk.co.hopperelec.mc.itemrace.en_US",
                 Locale.US, UTF8ResourceBundleControl.get()
         );
 
