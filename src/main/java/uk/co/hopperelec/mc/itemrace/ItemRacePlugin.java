@@ -1,5 +1,6 @@
 package uk.co.hopperelec.mc.itemrace;
 
+import co.aikar.commands.InvalidCommandArgument;
 import co.aikar.commands.PaperCommandManager;
 import fr.minuskube.inv.InventoryManager;
 import net.kyori.adventure.key.Key;
@@ -20,6 +21,8 @@ import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+
+import static uk.co.hopperelec.mc.itemrace.ItemRaceUtils.serializeTranslatable;
 
 public final class ItemRacePlugin extends JavaPlugin {
     private final Map<OfflinePlayer, Map<Material, Integer>> depositedItems = new HashMap<>();
@@ -48,8 +51,6 @@ public final class ItemRacePlugin extends JavaPlugin {
 
         // Load commands
         final PaperCommandManager commandManager = new PaperCommandManager(this);
-        commandManager.registerCommand(new ItemRaceCommand(this));
-        commandManager.enableUnstableAPI("help");
         commandManager.getCommandCompletions().registerCompletion(
                 "itemType",
                 c -> Arrays.stream(c.getPlayer().getInventory().getStorageContents())
@@ -60,6 +61,25 @@ public final class ItemRacePlugin extends JavaPlugin {
                         .map(Material::name)
                         .toList()
         );
+        commandManager.getCommandContexts().registerContext(ItemType.class, (c) -> {
+            final String name = c.popFirstArg();
+            try {
+                return new ItemType(name);
+            } catch (IllegalArgumentException e) {
+                throw new InvalidCommandArgument(
+                        // There might be a way to let the client handle this, but I can't figure it out
+                        serializeTranslatable(
+                                Component.translatable(
+                                        "command-context.itemtype.invalid",
+                                        Component.text(name)
+                                ),
+                                c.getPlayer().locale()
+                        )
+                );
+            }
+        });
+        commandManager.registerCommand(new ItemRaceCommand(this));
+        commandManager.enableUnstableAPI("help");
 
         // Create scoreboard
         scoreboard = getServer().getScoreboardManager().getNewScoreboard();

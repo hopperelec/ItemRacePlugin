@@ -52,31 +52,32 @@ public class ItemRaceCommand extends BaseCommand {
     @CommandCompletion("all|inventory @itemType")
     public void onDeposit(
         @NotNull Player player,
-        @Optional @Name("amount") String amountStr, @Optional @Name("item") Material itemType
+        @Optional @Name("amount") String amountStr, @Optional @Name("item") ItemType itemType
     ) {
+        final Material material;
         if (Objects.equals(amountStr, "all")) {
-            if (itemType == null) itemType = player.getInventory().getItemInMainHand().getType();
-            if (itemType.isAir()) {
+            material = itemType == null ? player.getInventory().getItemInMainHand().getType() : itemType.material();
+            if (material.isAir()) {
                 player.sendMessage(Component.translatable("command.deposit.itemtype.air"));
                 return;
             }
-            final int amountInt = player.getInventory().all(itemType).values().stream()
+            final int amountInt = player.getInventory().all(material).values().stream()
                     .map(ItemStack::getAmount)
                     .reduce(0, Integer::sum);
             if (amountInt == 0) {
                 player.sendMessage(Component.translatable(
                         "command.deposit.all.none",
-                        Component.translatable(itemType.translationKey())
+                        Component.translatable(material.translationKey())
                 ));
                 return;
             }
-            player.getInventory().remove(itemType);
-            plugin.depositItems(player, itemType, amountInt);
+            player.getInventory().remove(material);
+            plugin.depositItems(player, material, amountInt);
             player.sendMessage(
                     Component.translatable(
                             "command.deposit.all.success",
                             Component.text(amountInt),
-                            Component.translatable(itemType.translationKey())
+                            Component.translatable(material.translationKey())
                     )
             );
 
@@ -97,14 +98,16 @@ public class ItemRaceCommand extends BaseCommand {
             int amountInt = -1;
             boolean removedItems = false;
             if (itemType == null) {
-                itemType = player.getInventory().getItemInMainHand().getType();
+                material = player.getInventory().getItemInMainHand().getType();
                 if (amountStr == null) {
                     amountInt = player.getInventory().getItemInMainHand().getAmount();
                     player.getInventory().setItemInMainHand(null);
                     removedItems = true;
                 }
+            } else {
+                material = itemType.material();
             }
-            if (itemType.isAir()) {
+            if (material.isAir()) {
                 player.sendMessage(Component.translatable("command.deposit.itemtype.air"));
                 return;
             }
@@ -125,24 +128,24 @@ public class ItemRaceCommand extends BaseCommand {
             }
             if (!removedItems) {
                 Map<Integer, ItemStack> itemsNotRemoved = player.getInventory()
-                        .removeItem(new ItemStack(itemType, amountInt));
+                        .removeItem(new ItemStack(material, amountInt));
                 if (!itemsNotRemoved.isEmpty()) {
                     int amountNotRemoved = itemsNotRemoved.get(0).getAmount();
                     if (amountInt == amountNotRemoved) {
                         player.sendMessage(Component.translatable(
                                     "command.deposit.amount.insufficient",
                                     Component.text(amountInt),
-                                    Component.text(itemType.name())
+                                    Component.text(material.name())
                         ));
                         return;
                     }
                     amountInt -= amountNotRemoved;
                 }
             }
-            plugin.depositItems(player, itemType, amountInt);
+            plugin.depositItems(player, material, amountInt);
             player.sendMessage(Component.translatable("command.deposit.specific.success",
                     Component.text(amountInt),
-                    Component.translatable(itemType.translationKey())
+                    Component.translatable(material.translationKey())
             ));
         }
     }
