@@ -12,9 +12,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+
+import static org.bukkit.Bukkit.getScoreboardManager;
 
 @CommandAlias("itemrace")
 public class ItemRaceCommand extends BaseCommand {
@@ -32,10 +33,10 @@ public class ItemRaceCommand extends BaseCommand {
     @Subcommand("reset")
     public void onReset(@NotNull CommandSender sender, @Optional @Name("player") OfflinePlayer player) {
         if (player == null) {
-            plugin.depositedItems.clear();
+            plugin.resetDepositedItems();
             sender.sendMessage("Cleared all deposited items");
         } else {
-            plugin.depositedItems.remove(player);
+            plugin.resetDepositedItems(player);
             sender.sendMessage(
                     Component.text("Cleared all items deposited by ")
                             .append(Component.text(Objects.requireNonNull(player.getName())))
@@ -73,13 +74,7 @@ public class ItemRaceCommand extends BaseCommand {
                 amount -= amountNotRemoved;
             }
         }
-        int currentAmountDeposited = 0;
-        if (!plugin.depositedItems.containsKey(player)) {
-            plugin.depositedItems.put(player, new HashMap<>());
-        } else {
-            currentAmountDeposited = plugin.depositedItems.get(player).getOrDefault(itemType, 0);
-        }
-        plugin.depositedItems.get(player).put(itemType, currentAmountDeposited + amount);
+        plugin.depositItems(player, itemType, amount);
         player.sendMessage("Deposited "+amount+" "+ItemRaceUtils.getMaterialDisplayName(itemType));
     }
 
@@ -99,7 +94,7 @@ public class ItemRaceCommand extends BaseCommand {
     @Subcommand("leaderboard|lb")
     public void onLeaderboard(@NotNull CommandSender sender) {
         sender.sendMessage("=== ItemRace Leaderboard ===");
-        if (plugin.depositedItems.isEmpty()) {
+        if (plugin.hasDepositedItems()) {
             sender.sendMessage("Nobody has deposited any items yet");
         } else {
             final Map<OfflinePlayer, Integer> scores = plugin.calculateScores();
@@ -122,5 +117,14 @@ public class ItemRaceCommand extends BaseCommand {
             }
         }
         sender.sendMessage("==========================");
+    }
+
+    @Subcommand("togglescoreboard|tsb")
+    public void onToggleScoreboard(@NotNull Player player) {
+        if (player.getScoreboard() == plugin.scoreboard) {
+            player.setScoreboard(getScoreboardManager().getMainScoreboard());
+        } else {
+            player.setScoreboard(plugin.scoreboard);
+        }
     }
 }
