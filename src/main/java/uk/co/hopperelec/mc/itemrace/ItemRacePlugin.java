@@ -2,9 +2,13 @@ package uk.co.hopperelec.mc.itemrace;
 
 import co.aikar.commands.PaperCommandManager;
 import fr.minuskube.inv.InventoryManager;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.translation.GlobalTranslator;
+import net.kyori.adventure.translation.TranslationRegistry;
+import net.kyori.adventure.util.UTF8ResourceBundleControl;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.inventory.ItemStack;
@@ -15,10 +19,7 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public final class ItemRacePlugin extends JavaPlugin {
     private final Map<OfflinePlayer, Map<Material, Integer>> depositedItems = new HashMap<>();
@@ -26,10 +27,26 @@ public final class ItemRacePlugin extends JavaPlugin {
     public Objective scoreboardObjective;
     public final InventoryManager inventoryManager = new InventoryManager(this);
 
+    public ItemRacePlugin() {
+        // Load translations
+        final TranslationRegistry registry = TranslationRegistry.create(Key.key("namespace:value"));
+        registry.registerAll(
+                Locale.US,
+                ResourceBundle.getBundle(
+                        "uk.co.hopperelec.mc.itemrace.en_US",
+                        Locale.US, UTF8ResourceBundleControl.get()
+                ),
+                true
+        );
+        GlobalTranslator.translator().addSource(registry);
+    }
+
     @Override
     public void onEnable() {
+        // Initialize inventory for `/itemrace inventory`
         inventoryManager.init();
 
+        // Load commands
         final PaperCommandManager commandManager = new PaperCommandManager(this);
         commandManager.registerCommand(new ItemRaceCommand(this));
         commandManager.enableUnstableAPI("help");
@@ -44,8 +61,13 @@ public final class ItemRacePlugin extends JavaPlugin {
                         .toList()
         );
 
+        // Create scoreboard
         scoreboard = getServer().getScoreboardManager().getNewScoreboard();
-        scoreboardObjective = scoreboard.registerNewObjective("score", Criteria.DUMMY, Component.text("ItemRace score", Style.style(TextDecoration.BOLD)));
+        scoreboardObjective = scoreboard.registerNewObjective(
+                "score",
+                Criteria.DUMMY,
+                Component.translatable("scoreboard.title", Style.style(TextDecoration.BOLD))
+        );
         scoreboardObjective.setDisplaySlot(DisplaySlot.SIDEBAR);
     }
 
