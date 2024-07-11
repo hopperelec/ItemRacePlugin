@@ -50,8 +50,10 @@ public class ItemRaceCommand extends BaseCommand {
 
     @Subcommand("deposit|dep")
     @CommandCompletion("all|inventory @itemType")
-    public void onDeposit(@NotNull Player player, @Optional @Name("amount") String amountStr,
-                          @Optional @Name("item") Material itemType) {
+    public void onDeposit(
+        @NotNull Player player,
+        @Optional @Name("amount") String amountStr, @Optional @Name("item") Material itemType
+    ) {
         if (Objects.equals(amountStr, "all")) {
             if (itemType == null) itemType = player.getInventory().getItemInMainHand().getType();
             if (itemType.isAir()) {
