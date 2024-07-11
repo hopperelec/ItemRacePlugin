@@ -1,7 +1,7 @@
 name: ${project.name}
 version: ${project.version}
 main: uk.co.hopperelec.mc.itemrace.ItemRacePlugin
-prefix: AntiDamage
+prefix: ItemRace
 authors: [ hopperelec ]
 description: ${project.description}
 api-version: 1.21
