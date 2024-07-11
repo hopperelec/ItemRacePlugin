@@ -7,6 +7,7 @@ import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
@@ -14,8 +15,10 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public final class ItemRacePlugin extends JavaPlugin {
     private final Map<OfflinePlayer, Map<Material, Integer>> depositedItems = new HashMap<>();
@@ -30,6 +33,16 @@ public final class ItemRacePlugin extends JavaPlugin {
         final PaperCommandManager commandManager = new PaperCommandManager(this);
         commandManager.registerCommand(new ItemRaceCommand(this));
         commandManager.enableUnstableAPI("help");
+        commandManager.getCommandCompletions().registerCompletion(
+                "itemType",
+                c -> Arrays.stream(c.getPlayer().getInventory().getStorageContents())
+                        .filter(Objects::nonNull)
+                        .map(ItemStack::getType)
+                        .distinct()
+                        .filter(itemType -> !itemType.isAir())
+                        .map(Material::name)
+                        .toList()
+        );
 
         scoreboard = getServer().getScoreboardManager().getNewScoreboard();
         scoreboardObjective = scoreboard.registerNewObjective("score", Criteria.DUMMY, Component.text("ItemRace score", Style.style(TextDecoration.BOLD)));
