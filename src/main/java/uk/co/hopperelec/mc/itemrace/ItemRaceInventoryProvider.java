@@ -67,7 +67,7 @@ public class ItemRaceInventoryProvider implements InventoryProvider {
                             .toArray(ClickableItem[]::new)
             );
         }
-        pagination.setItemsPerPage(3);
+        pagination.setItemsPerPage(45);
         pagination.addToIterator(contents.newIterator(SlotIterator.Type.HORIZONTAL, 0, 0));
         if (!pagination.isFirst())
             contents.set(5, 3, ClickableItem.of(
