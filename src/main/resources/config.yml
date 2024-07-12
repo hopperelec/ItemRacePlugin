@@ -23,6 +23,7 @@ points:
 
   # Whether to award a point for the first item a player deposits (true/false)
   # If this is false, players won't receive their first point until they deposit `items_per_point_growth_rate` items.
+  # This has no effect if `items_per_point_growth_rate` is 1.
   award_for_first_item: true
 
   # The maximum number of points a player can be awarded for a single type of item (integer)

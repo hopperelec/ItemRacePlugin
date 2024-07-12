@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.StreamSupport;
 
+import static uk.co.hopperelec.mc.itemrace.ItemRaceUtils.floorLog;
 import static uk.co.hopperelec.mc.itemrace.ItemRaceUtils.serializeTranslatable;
 
 public final class ItemRacePlugin extends JavaPlugin {
@@ -121,13 +122,19 @@ public final class ItemRacePlugin extends JavaPlugin {
         scoreboardObjective.setDisplaySlot(DisplaySlot.SIDEBAR);
     }
 
+    public int scoreForAmount(int amount) {
+        if (amount == 0) return 0;
+        int score = floorLog(config.itemsPerPointGrowthRate(), amount);
+        if (config.maxPointsPerItemType() > 0) score = Math.min(score, config.maxPointsPerItemType());
+        if (config.awardPointForFirstItem() && config.itemsPerPointGrowthRate() > 1) return score + 1;
+        return score;
+    }
+
     private int calculateScore(@NotNull OfflinePlayer player) {
         if (!depositedItems.containsKey(player)) return 0;
-        int score = 0;
-        for (int amount : depositedItems.get(player).values()) {
-            score += 32 - Integer.numberOfLeadingZeros(amount); // log2(amount)
-        }
-        return score;
+        return depositedItems.get(player).values().stream()
+                .map(this::scoreForAmount)
+                .reduce(0, Integer::sum);
     }
 
     @NotNull
