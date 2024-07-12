@@ -120,6 +120,9 @@ public final class ItemRacePlugin extends JavaPlugin {
                 Component.translatable("scoreboard.title", Style.style(TextDecoration.BOLD))
         );
         scoreboardObjective.setDisplaySlot(DisplaySlot.SIDEBAR);
+        if (config.defaultScoreboardState()) {
+            getServer().getPluginManager().registerEvents(new ShowScoreboardListener(scoreboard), this);
+        }
     }
 
     public int scoreForAmount(int amount) {

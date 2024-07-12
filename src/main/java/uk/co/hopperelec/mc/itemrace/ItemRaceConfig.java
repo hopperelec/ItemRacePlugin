@@ -14,7 +14,7 @@ public record ItemRaceConfig(
     int autosaveFrequency,
 
     // Scoreboard
-    boolean defaultState, // 'on' => true, 'off' => false
+    boolean defaultScoreboardState, // 'on' => true, 'off' => false
     DisplaySlot displaySlot,
 
     // Denylist
