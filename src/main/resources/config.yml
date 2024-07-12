@@ -1,0 +1,63 @@
+points:
+  # When to award points for items. One of:
+  # - AUTO_DEPOSIT:
+  #   All items a player picks up are automatically moved into their ItemRace inventory which they cannot take items out of.
+  # - MANUAL_DEPOSIT:
+  #   Similar to AUTO_DEPOSIT, but players choose which items to move to their ItemRace inventory.
+  # - MAX_INVENTORY:
+  #   Similar to AUTO_DEPOSIT, but players do not lose deposited items. Instead, their ItemRace inventory is based on the
+  #   maximum amount of a given item they have held in their inventory at any time.
+  # - INVENTORY:
+  #   Players are scored based on the items currently in their inventory.
+  # - ENDER_CHEST:
+  #   Similar to INVENTORY, but also includes items in their ender chest.
+  award_mode: MANUAL_DEPOSIT
+
+  # The rate at which the number of items needed to get each point increases (positive integer)
+  # This is done exponentially such that (assuming `award_point_for_first_item` is `true`):
+  # - If this is 1, players will get 1 point for every item deposited
+  # - If this is 2, players will still get a point for the first and second item they deposit,
+  #   but won't get their third point until their 4th item, then until their 8th item
+  # - If this is 3, players will get a point for their 1st, 3rd, 9th, 27th... item
+  items_per_point_growth_rate: 2
+
+  # Whether to award a point for the first item a player deposits (true/false)
+  # If this is false, players won't receive their first point until they deposit `items_per_point_growth_rate` items.
+  award_for_first_item: true
+
+  # The maximum number of points a player can be awarded for a single type of item (integer)
+  # If `award_points_mode` is `MANUAL_DEPOSIT`, players will be prevented from depositing more items than they can be awarded points for.
+  # If this is negative, an unlimited number of points may be awarded.
+  max_per_item_type: -1
+
+
+# These options have no effect if `award_mode` is `INVENTORY` or `ENDER_CHEST`
+inventory:
+  # Whether players' ItemRace inventory should persist between server restarts (true/false)
+  # If this is true, ItemRace inventories will be saved to a file alongside this config when the server shuts down
+  persist_inventory: true
+
+  # How often, in minutes, players' ItemRace inventories should be auto-saved (integer)
+  # This has no effect if `persist_inventory` is `false`
+  autosave_frequency: 5
+
+
+scoreboard:
+  # Whether the scoreboard is toggled on by default (on/off)
+  # Players can toggle this on and off for themselves using `/itemrace togglescoreboard`
+  default_state: on
+
+  # Where scores should be displayed (SIDEBAR/PLAYER_LIST/BELOW_NAME)
+  display_slot: SIDEBAR
+
+
+denylist:
+  # Items which players cannot deposit.
+  # For a list of item names, see https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Material.html
+  # You do not need to specify air-like items!
+  items:
+  #- COBBLESTONE
+  #- OAK_LEAVES
+
+  # Set this to true if there is only a limited number of items you want to allow players to deposit.
+  treat_as_allowlist: false

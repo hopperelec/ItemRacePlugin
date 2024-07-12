@@ -2,6 +2,8 @@ package uk.co.hopperelec.mc.itemrace;
 
 import co.aikar.commands.InvalidCommandArgument;
 import co.aikar.commands.PaperCommandManager;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import fr.minuskube.inv.InventoryManager;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
@@ -20,7 +22,10 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
+import java.util.stream.StreamSupport;
 
 import static uk.co.hopperelec.mc.itemrace.ItemRaceUtils.serializeTranslatable;
 
@@ -29,8 +34,9 @@ public final class ItemRacePlugin extends JavaPlugin {
     public Scoreboard scoreboard;
     public Objective scoreboardObjective;
     public final InventoryManager inventoryManager = new InventoryManager(this);
+    public final ItemRaceConfig config;
 
-    public ItemRacePlugin() {
+    public ItemRacePlugin() throws IOException {
         // Load translations
         final TranslationRegistry registry = TranslationRegistry.create(Key.key("namespace:value"));
         registry.registerAll(
@@ -42,6 +48,30 @@ public final class ItemRacePlugin extends JavaPlugin {
                 true
         );
         GlobalTranslator.translator().addSource(registry);
+
+        // Load config
+        saveDefaultConfig();
+        final JsonNode configFile = new YAMLMapper().readTree(new File(getDataFolder(), "config.yml"));
+        config = new ItemRaceConfig(
+                PointsAwardMode.valueOf(configFile.get("points").get("award_mode").asText().toUpperCase()),
+                configFile.get("points").get("items_per_point_growth_rate").asInt(),
+                configFile.get("points").get("award_for_first_item").asBoolean(),
+                configFile.get("points").get("max_per_item_type").asInt(),
+                configFile.get("inventory").get("persist_inventory").asBoolean(),
+                configFile.get("inventory").get("autosave_frequency").asInt(),
+                configFile.get("scoreboard").get("default_state").asBoolean(),
+                switch (configFile.get("scoreboard").get("display_slot").asText().toUpperCase()) {
+                    case "SIDEBAR" -> DisplaySlot.SIDEBAR;
+                    case "BELOW_NAME" -> DisplaySlot.BELOW_NAME;
+                    case "PLAYER_LIST" -> DisplaySlot.PLAYER_LIST;
+                    default -> throw new IllegalStateException("scoreboard.display_slot must be one of SIDEBAR, BELOW_NAME or PLAYER_LIST");
+                },
+                StreamSupport.stream(configFile.get("denylist").get("items").spliterator(), false)
+                        .map(JsonNode::asText)
+                        .map(ItemType::new)
+                        .toArray(ItemType[]::new),
+                configFile.get("denylist").get("treat_as_allowlist").asBoolean()
+        );
     }
 
     @Override
