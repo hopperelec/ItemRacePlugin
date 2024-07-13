@@ -12,7 +12,7 @@ public record ItemRaceConfig(
 
     // Inventory
     boolean persistDepositedItems,
-    int autosaveFrequency, // TODO: Implement auto-saving
+    int autosaveFrequencyTicks,
 
     // Scoreboard
     boolean defaultScoreboardState, // 'on' => true, 'off' => false

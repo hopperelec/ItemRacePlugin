@@ -44,8 +44,9 @@ deposited_items:
   # If this is true, deposited items will be saved to a file alongside this config when the server shuts down
   persist: true
 
-  # How often, in minutes, deposited items should be auto-saved (integer)
+  # How often, in minutes, deposited items should be auto-saved (number)
   # This has no effect if `persist_deposited_items` is `false`
+  # If this is 0, deposited items will only be saved when the plugin is disabled (e.g.: when the server shuts down)
   autosave_frequency: 5
 
 

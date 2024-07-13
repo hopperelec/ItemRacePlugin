@@ -61,7 +61,7 @@ public final class ItemRacePlugin extends JavaPlugin {
                 configFile.get("points").get("max_per_item_type").asInt(),
                 configFile.get("points").get("allow_damaged_tools").asBoolean(),
                 configFile.get("deposited_items").get("persist").asBoolean(),
-                configFile.get("deposited_items").get("autosave_frequency").asInt(),
+                (int)(configFile.get("deposited_items").get("autosave_frequency").asDouble() * 60 * 20),
                 configFile.get("scoreboard").get("default_state").asBoolean(),
                 switch (configFile.get("scoreboard").get("display_slot").asText().toUpperCase()) {
                     case "SIDEBAR" -> DisplaySlot.SIDEBAR;
@@ -77,7 +77,7 @@ public final class ItemRacePlugin extends JavaPlugin {
         );
 
         // Load persisted deposited items
-        if (config.persistDepositedItems() && DEPOSITED_ITEMS_FILE.exists()) {
+        if (config.persistDepositedItems() && DEPOSITED_ITEMS_FILE.exists())
             new YAMLMapper().readTree(DEPOSITED_ITEMS_FILE).fields().forEachRemaining(inventory -> {
                 final Map<Material, Integer> items = new HashMap<>();
                 inventory.getValue().fields().forEachRemaining(
@@ -88,13 +88,20 @@ public final class ItemRacePlugin extends JavaPlugin {
                 );
                 depositedItems.put(getServer().getOfflinePlayer(UUID.fromString(inventory.getKey())), items);
             });
-        }
     }
 
     @Override
     public void onEnable() {
         // Initialize inventory for `/itemrace inventory`
         inventoryManager.init();
+
+        // Start auto-saving deposited items
+        if (config.persistDepositedItems() && config.autosaveFrequencyTicks() > 0)
+            getServer().getScheduler().scheduleSyncRepeatingTask(
+                    this, this::saveDepositedItems,
+                    config.autosaveFrequencyTicks(),
+                    config.autosaveFrequencyTicks()
+            );
 
         // Load commands
         final PaperCommandManager commandManager = new PaperCommandManager(this);
@@ -162,9 +169,8 @@ public final class ItemRacePlugin extends JavaPlugin {
 
     public boolean canDeposit(@NotNull Material material) {
         if (material.isAir()) return false;
-        if (config.treatDenylistAsWhitelist()) {
+        if (config.treatDenylistAsWhitelist())
             return Arrays.stream(config.denylistItems()).anyMatch(itemType -> itemType.is(material));
-        }
         return Arrays.stream(config.denylistItems()).noneMatch(itemType -> itemType.is(material));
     }
 
