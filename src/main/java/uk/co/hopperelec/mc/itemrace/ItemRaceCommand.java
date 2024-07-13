@@ -58,8 +58,13 @@ public class ItemRaceCommand extends BaseCommand {
         final Material material;
         if (Objects.equals(amountStr, "all")) {
             material = itemType == null ? player.getInventory().getItemInMainHand().getType() : itemType.material();
-            if (material.isAir()) {
-                player.sendMessage(Component.translatable("command.deposit.itemtype.air"));
+            if (!plugin.canDeposit(material)) {
+                player.sendMessage(
+                        Component.translatable(
+                                "command.deposit.itemtype.denied",
+                                Component.translatable(material)
+                        )
+                );
                 return;
             }
             int amountInt = 0;
@@ -90,7 +95,7 @@ public class ItemRaceCommand extends BaseCommand {
                 return;
             }
             for (ItemStack item : player.getInventory().getStorageContents()) {
-                if (item == null || item.getType().isAir()) continue;
+                if (item == null || !plugin.canDeposit(item.getType())) continue;
                 if (!plugin.config.allowDamagedTools() && isDamaged(item)) continue;
                 plugin.depositItems(player, item.getType(), item.getAmount());
                 item.setAmount(0);
@@ -99,7 +104,6 @@ public class ItemRaceCommand extends BaseCommand {
 
         } else {
             int amountInt = -1;
-            boolean removedItems = false;
             if (itemType == null) {
                 if (!plugin.config.allowDamagedTools() && isDamaged(player.getInventory().getItemInMainHand())) {
                     player.sendMessage(Component.translatable("command.deposit.specific.damaged"));
@@ -108,14 +112,17 @@ public class ItemRaceCommand extends BaseCommand {
                 material = player.getInventory().getItemInMainHand().getType();
                 if (amountStr == null) {
                     amountInt = player.getInventory().getItemInMainHand().getAmount();
-                    player.getInventory().setItemInMainHand(null);
-                    removedItems = true;
                 }
             } else {
                 material = itemType.material();
             }
-            if (material.isAir()) {
-                player.sendMessage(Component.translatable("command.deposit.itemtype.air"));
+            if (!plugin.canDeposit(material)) {
+                player.sendMessage(
+                        Component.translatable(
+                                "command.deposit.itemtype.denied",
+                                Component.translatable(material)
+                        )
+                );
                 return;
             }
             if (amountInt == -1) {
@@ -133,7 +140,9 @@ public class ItemRaceCommand extends BaseCommand {
                 player.sendMessage(Component.translatable("command.deposit.amount.zero"));
                 return;
             }
-            if (!removedItems) {
+            if (itemType == null && amountStr == null) {
+                player.getInventory().setItemInMainHand(null);
+            } else {
                 int amountRemoved = 0;
                 int amountToRemove = amountInt;
                 for (ItemStack item : player.getInventory().getStorageContents()) {

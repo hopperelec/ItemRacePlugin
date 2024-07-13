@@ -89,7 +89,7 @@ public final class ItemRacePlugin extends JavaPlugin {
                         .filter(Objects::nonNull)
                         .map(ItemStack::getType)
                         .distinct()
-                        .filter(itemType -> !itemType.isAir())
+                        .filter(this::canDeposit)
                         .map(Material::name)
                         .toList()
         );
@@ -124,6 +124,14 @@ public final class ItemRacePlugin extends JavaPlugin {
         if (config.defaultScoreboardState()) {
             getServer().getPluginManager().registerEvents(new ShowScoreboardListener(scoreboard), this);
         }
+    }
+
+    public boolean canDeposit(@NotNull Material material) {
+        if (material.isAir()) return false;
+        if (config.treatDenylistAsWhitelist()) {
+            return Arrays.stream(config.denylistItems()).anyMatch(itemType -> itemType.is(material));
+        }
+        return Arrays.stream(config.denylistItems()).noneMatch(itemType -> itemType.is(material));
     }
 
     public int scoreForAmount(int amount) {

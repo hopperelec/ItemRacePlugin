@@ -19,7 +19,6 @@ public record ItemRaceConfig(
     DisplaySlot scoreboardDisplaySlot,
 
     // Denylist
-    // TODO: Implement denylist/allowlist
     ItemType[] denylistItems,
     boolean treatDenylistAsWhitelist
 ) {}

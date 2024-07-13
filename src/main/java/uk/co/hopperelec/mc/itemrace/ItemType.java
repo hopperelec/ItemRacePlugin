@@ -11,4 +11,8 @@ public record ItemType(Material material) {
     public ItemType(@NotNull String materialName) {
         this(Material.valueOf(materialName.toUpperCase()));
     }
+
+    public boolean is(@NotNull Material material) {
+        return this.material == material;
+    }
 }

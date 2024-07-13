@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Locale;
 
 public final class ItemRaceUtils {
+    @NotNull
     public static String serializeTranslatable(@NotNull TranslatableComponent component, @NotNull Locale locale) {
         return PlainTextComponentSerializer.plainText().serialize(
                 GlobalTranslator.render(component, locale)
