@@ -119,7 +119,7 @@ public final class ItemRacePlugin extends JavaPlugin {
                 Criteria.DUMMY,
                 Component.translatable("scoreboard.title", Style.style(TextDecoration.BOLD))
         );
-        scoreboardObjective.setDisplaySlot(DisplaySlot.SIDEBAR);
+        scoreboardObjective.setDisplaySlot(config.scoreboardDisplaySlot());
         if (config.defaultScoreboardState()) {
             getServer().getPluginManager().registerEvents(new ShowScoreboardListener(scoreboard), this);
         }

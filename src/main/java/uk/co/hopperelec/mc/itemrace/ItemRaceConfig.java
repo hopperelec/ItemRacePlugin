@@ -15,7 +15,7 @@ public record ItemRaceConfig(
 
     // Scoreboard
     boolean defaultScoreboardState, // 'on' => true, 'off' => false
-    DisplaySlot displaySlot,
+    DisplaySlot scoreboardDisplaySlot,
 
     // Denylist
     ItemType[] denylistItems,
