@@ -31,6 +31,12 @@ points:
   # If this is negative, an unlimited number of points may be awarded.
   max_per_item_type: -1
 
+  # Whether damaged tools should count towards the total number of each tool a player has deposited (true/false)
+  # If this is false, players will not be able to deposit damaged tools in MANUAL_DEPOSIT mode.
+  # If this is false, damaged tools will still be removed from players' inventories in AUTO_DEPOSIT mode
+  #   but won't be added to their ItemRace inventory.
+  allow_damaged_tools: true
+
 
 # These options have no effect if `award_mode` is `INVENTORY` or `ENDER_CHEST`
 inventory:

@@ -58,6 +58,7 @@ public final class ItemRacePlugin extends JavaPlugin {
                 configFile.get("points").get("items_per_point_growth_rate").asInt(),
                 configFile.get("points").get("award_for_first_item").asBoolean(),
                 configFile.get("points").get("max_per_item_type").asInt(),
+                configFile.get("points").get("allow_damaged_tools").asBoolean(),
                 configFile.get("inventory").get("persist_inventory").asBoolean(),
                 configFile.get("inventory").get("autosave_frequency").asInt(),
                 configFile.get("scoreboard").get("default_state").asBoolean(),

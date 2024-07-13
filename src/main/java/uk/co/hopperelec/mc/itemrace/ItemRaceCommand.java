@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import static org.bukkit.Bukkit.getScoreboardManager;
+import static uk.co.hopperelec.mc.itemrace.ItemRaceUtils.isDamaged;
 import static uk.co.hopperelec.mc.itemrace.ItemRaceUtils.serializeTranslatable;
 
 @CommandAlias("itemrace")
@@ -61,9 +62,12 @@ public class ItemRaceCommand extends BaseCommand {
                 player.sendMessage(Component.translatable("command.deposit.itemtype.air"));
                 return;
             }
-            final int amountInt = player.getInventory().all(material).values().stream()
-                    .map(ItemStack::getAmount)
-                    .reduce(0, Integer::sum);
+            int amountInt = 0;
+            for (ItemStack item : player.getInventory().all(material).values()) {
+                if (!plugin.config.allowDamagedTools() && isDamaged(item)) continue;
+                amountInt += item.getAmount();
+                item.setAmount(0);
+            }
             if (amountInt == 0) {
                 player.sendMessage(Component.translatable(
                         "command.deposit.all.none",
@@ -71,7 +75,6 @@ public class ItemRaceCommand extends BaseCommand {
                 ));
                 return;
             }
-            player.getInventory().remove(material);
             plugin.depositItems(player, material, amountInt);
             player.sendMessage(
                     Component.translatable(
@@ -87,10 +90,10 @@ public class ItemRaceCommand extends BaseCommand {
                 return;
             }
             for (ItemStack item : player.getInventory().getStorageContents()) {
-                if (item != null && !item.getType().isAir()) {
-                    plugin.depositItems(player, item.getType(), item.getAmount());
-                    item.setAmount(0);
-                }
+                if (item == null || item.getType().isAir()) continue;
+                if (!plugin.config.allowDamagedTools() && isDamaged(item)) continue;
+                plugin.depositItems(player, item.getType(), item.getAmount());
+                item.setAmount(0);
             }
             player.sendMessage(Component.translatable("command.deposit.inventory.success"));
 
@@ -98,6 +101,10 @@ public class ItemRaceCommand extends BaseCommand {
             int amountInt = -1;
             boolean removedItems = false;
             if (itemType == null) {
+                if (!plugin.config.allowDamagedTools() && isDamaged(player.getInventory().getItemInMainHand())) {
+                    player.sendMessage(Component.translatable("command.deposit.specific.damaged"));
+                    return;
+                }
                 material = player.getInventory().getItemInMainHand().getType();
                 if (amountStr == null) {
                     amountInt = player.getInventory().getItemInMainHand().getAmount();
@@ -127,19 +134,28 @@ public class ItemRaceCommand extends BaseCommand {
                 return;
             }
             if (!removedItems) {
-                Map<Integer, ItemStack> itemsNotRemoved = player.getInventory()
-                        .removeItem(new ItemStack(material, amountInt));
-                if (!itemsNotRemoved.isEmpty()) {
-                    int amountNotRemoved = itemsNotRemoved.get(0).getAmount();
-                    if (amountInt == amountNotRemoved) {
-                        player.sendMessage(Component.translatable(
-                                    "command.deposit.amount.insufficient",
-                                    Component.text(amountInt),
-                                    Component.text(material.name())
-                        ));
-                        return;
+                int amountRemoved = 0;
+                int amountToRemove = amountInt;
+                for (ItemStack item : player.getInventory().getStorageContents()) {
+                    if (item == null || item.getType() != material) continue;
+                    if (!plugin.config.allowDamagedTools() && isDamaged(item)) continue;
+                    if (item.getAmount() >= amountToRemove) {
+                        amountRemoved += item.getAmount();
+                        amountToRemove -= item.getAmount();
+                        item.setAmount(0);
+                    } else {
+                        amountRemoved = amountInt;
+                        item.setAmount(item.getAmount() - amountToRemove);
+                        break;
                     }
-                    amountInt -= amountNotRemoved;
+                }
+                if (amountRemoved == 0) {
+                    player.sendMessage(Component.translatable(
+                            "command.deposit.amount.insufficient",
+                            Component.text(amountInt),
+                            Component.text(material.name())
+                    ));
+                    return;
                 }
             }
             plugin.depositItems(player, material, amountInt);
