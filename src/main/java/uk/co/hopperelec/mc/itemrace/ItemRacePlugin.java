@@ -31,6 +31,7 @@ import static uk.co.hopperelec.mc.itemrace.ItemRaceUtils.floorLog;
 import static uk.co.hopperelec.mc.itemrace.ItemRaceUtils.serializeTranslatable;
 
 public final class ItemRacePlugin extends JavaPlugin {
+    private final File DEPOSITED_ITEMS_FILE = new File(getDataFolder(), "deposited_items.yml");
     private final Map<OfflinePlayer, Map<Material, Integer>> depositedItems = new HashMap<>();
     public Scoreboard scoreboard;
     public Objective scoreboardObjective;
@@ -59,8 +60,8 @@ public final class ItemRacePlugin extends JavaPlugin {
                 configFile.get("points").get("award_for_first_item").asBoolean(),
                 configFile.get("points").get("max_per_item_type").asInt(),
                 configFile.get("points").get("allow_damaged_tools").asBoolean(),
-                configFile.get("inventory").get("persist_inventory").asBoolean(),
-                configFile.get("inventory").get("autosave_frequency").asInt(),
+                configFile.get("deposited_items").get("persist").asBoolean(),
+                configFile.get("deposited_items").get("autosave_frequency").asInt(),
                 configFile.get("scoreboard").get("default_state").asBoolean(),
                 switch (configFile.get("scoreboard").get("display_slot").asText().toUpperCase()) {
                     case "SIDEBAR" -> DisplaySlot.SIDEBAR;
@@ -74,6 +75,20 @@ public final class ItemRacePlugin extends JavaPlugin {
                         .toArray(ItemType[]::new),
                 configFile.get("denylist").get("treat_as_allowlist").asBoolean()
         );
+
+        // Load persisted deposited items
+        if (config.persistDepositedItems() && DEPOSITED_ITEMS_FILE.exists()) {
+            new YAMLMapper().readTree(DEPOSITED_ITEMS_FILE).fields().forEachRemaining(inventory -> {
+                final Map<Material, Integer> items = new HashMap<>();
+                inventory.getValue().fields().forEachRemaining(
+                        depositedItem -> items.put(
+                                Material.valueOf(depositedItem.getKey()),
+                                depositedItem.getValue().asInt()
+                        )
+                );
+                depositedItems.put(getServer().getOfflinePlayer(UUID.fromString(inventory.getKey())), items);
+            });
+        }
     }
 
     @Override
@@ -123,6 +138,25 @@ public final class ItemRacePlugin extends JavaPlugin {
         scoreboardObjective.setDisplaySlot(config.scoreboardDisplaySlot());
         if (config.defaultScoreboardState()) {
             getServer().getPluginManager().registerEvents(new ShowScoreboardListener(scoreboard), this);
+        }
+    }
+
+    @Override
+    public void onDisable() {
+        if (config.persistDepositedItems()) saveDepositedItems();
+    }
+
+    public void saveDepositedItems() {
+        final Map<UUID, Map<String, Integer>> serializedDepositedItems = new HashMap<>();
+        depositedItems.forEach((player, items) -> {
+            final Map<String, Integer> serializedItems = new HashMap<>();
+            items.forEach((material, amount) -> serializedItems.put(material.name(), amount));
+            serializedDepositedItems.put(player.getUniqueId(), serializedItems);
+        });
+        try {
+            new YAMLMapper().writeValue(DEPOSITED_ITEMS_FILE, serializedDepositedItems);
+        } catch (IOException e) {
+            getLogger().warning("Failed to save deposited_items.yml: "+e.getMessage());
         }
     }
 

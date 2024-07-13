@@ -39,13 +39,13 @@ points:
 
 
 # These options have no effect if `award_mode` is `INVENTORY` or `ENDER_CHEST`
-inventory:
-  # Whether players' ItemRace inventory should persist between server restarts (true/false)
-  # If this is true, ItemRace inventories will be saved to a file alongside this config when the server shuts down
-  persist_inventory: true
+deposited_items:
+  # Whether deposited items should persist between server restarts (true/false)
+  # If this is true, deposited items will be saved to a file alongside this config when the server shuts down
+  persist: true
 
-  # How often, in minutes, players' ItemRace inventories should be auto-saved (integer)
-  # This has no effect if `persist_inventory` is `false`
+  # How often, in minutes, deposited items should be auto-saved (integer)
+  # This has no effect if `persist_deposited_items` is `false`
   autosave_frequency: 5
 
 

@@ -11,8 +11,8 @@ public record ItemRaceConfig(
     boolean allowDamagedTools,
 
     // Inventory
-    boolean persistInventory, // TODO: Implement ItemRace inventory saving
-    int autosaveFrequency,
+    boolean persistDepositedItems,
+    int autosaveFrequency, // TODO: Implement auto-saving
 
     // Scoreboard
     boolean defaultScoreboardState, // 'on' => true, 'off' => false
