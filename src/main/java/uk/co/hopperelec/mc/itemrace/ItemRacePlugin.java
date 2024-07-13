@@ -76,8 +76,13 @@ public final class ItemRacePlugin extends JavaPlugin {
                 configFile.get("denylist").get("treat_as_allowlist").asBoolean()
         );
 
+        // TODO: Remove once implemented
+        if (config.pointsAwardMode() != PointsAwardMode.MANUAL_DEPOSIT) {
+            getLogger().warning(config.pointsAwardMode().name()+" has not been implemented yet!");
+        }
+
         // Load persisted deposited items
-        if (config.persistDepositedItems() && DEPOSITED_ITEMS_FILE.exists())
+        if (isPersistingDepositedItems() && DEPOSITED_ITEMS_FILE.exists())
             new YAMLMapper().readTree(DEPOSITED_ITEMS_FILE).fields().forEachRemaining(inventory -> {
                 final Map<Material, Integer> items = new HashMap<>();
                 inventory.getValue().fields().forEachRemaining(
@@ -96,7 +101,7 @@ public final class ItemRacePlugin extends JavaPlugin {
         inventoryManager.init();
 
         // Start auto-saving deposited items
-        if (config.persistDepositedItems() && config.autosaveFrequencyTicks() > 0)
+        if (isPersistingDepositedItems() && config.autosaveFrequencyTicks() > 0)
             getServer().getScheduler().scheduleSyncRepeatingTask(
                     this, this::saveDepositedItems,
                     config.autosaveFrequencyTicks(),
@@ -153,6 +158,10 @@ public final class ItemRacePlugin extends JavaPlugin {
         if (config.persistDepositedItems()) saveDepositedItems();
     }
 
+    public boolean isPersistingDepositedItems() {
+        return config.persistDepositedItems() && config.pointsAwardMode().hasOwnInventory;
+    }
+
     public void saveDepositedItems() {
         final Map<UUID, Map<String, Integer>> serializedDepositedItems = new HashMap<>();
         depositedItems.forEach((player, items) -> {
@@ -198,7 +207,13 @@ public final class ItemRacePlugin extends JavaPlugin {
         );
     }
 
+    private void throwIfNotHasOwnInventory() {
+        if (!config.pointsAwardMode().hasOwnInventory)
+            throw new IllegalStateException("This server is using a points award mode that does not have a deposited items inventory");
+    }
+
     public void depositItems(@NotNull OfflinePlayer player, @NotNull Material itemType, int amount) {
+        throwIfNotHasOwnInventory();
         int currentAmountDeposited = 0;
         if (!depositedItems.containsKey(player)) {
             depositedItems.put(player, new HashMap<>());
@@ -209,12 +224,14 @@ public final class ItemRacePlugin extends JavaPlugin {
         scoreboardObjective.getScore(player).setScore(calculateScore(player));
     }
 
-    public void resetDepositedItems() {
+    public void resetDepositedItemsInventory() {
+        throwIfNotHasOwnInventory();
         depositedItems.clear();
         scoreboard.getEntries().forEach(scoreboard::resetScores);
     }
 
-    public void resetDepositedItems(@NotNull OfflinePlayer player) {
+    public void resetDepositedItemsInventory(@NotNull OfflinePlayer player) {
+        throwIfNotHasOwnInventory();
         depositedItems.remove(player);
         scoreboard.resetScores(player);
     }
@@ -224,11 +241,11 @@ public final class ItemRacePlugin extends JavaPlugin {
         return depositedItems.getOrDefault(player, new HashMap<>());
     }
 
-    public boolean hasDepositedItems() {
+    public boolean hasDepositedItemsInventory() {
         return !depositedItems.isEmpty();
     }
 
-    public boolean hasDepositedItems(@NotNull OfflinePlayer player) {
+    public boolean hasDepositedItemsInventory(@NotNull OfflinePlayer player) {
         return depositedItems.containsKey(player);
     }
 }

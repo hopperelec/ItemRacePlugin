@@ -36,10 +36,10 @@ public class ItemRaceCommand extends BaseCommand {
     @CommandCompletion("@players")
     public void onReset(@NotNull CommandSender sender, @Optional @Name("player") OfflinePlayer player) {
         if (player == null) {
-            plugin.resetDepositedItems();
+            plugin.resetDepositedItemsInventory();
             sender.sendMessage(Component.translatable("command.reset.all"));
         } else {
-            plugin.resetDepositedItems(player);
+            plugin.resetDepositedItemsInventory(player);
             if (player.getName() != null) {
                 sender.sendMessage(Component.translatable(
                         "command.reset.player",
@@ -55,6 +55,10 @@ public class ItemRaceCommand extends BaseCommand {
         @NotNull Player player,
         @Optional @Name("amount") String amountStr, @Optional @Name("item") ItemType itemType
     ) {
+        if (plugin.config.pointsAwardMode() != PointsAwardMode.MANUAL_DEPOSIT) {
+            player.sendMessage(Component.translatable("command.deposit.disabled"));
+            return;
+        }
         final Material material;
         if (Objects.equals(amountStr, "all")) {
             material = itemType == null ? player.getInventory().getItemInMainHand().getType() : itemType.material();
@@ -199,7 +203,7 @@ public class ItemRaceCommand extends BaseCommand {
     @Subcommand("leaderboard|lb")
     public void onLeaderboard(@NotNull CommandSender sender) {
         sender.sendMessage(Component.translatable("command.leaderboard.header"));
-        if (plugin.hasDepositedItems()) {
+        if (plugin.hasDepositedItemsInventory()) {
             final Map<OfflinePlayer, Integer> scores = plugin.calculateScores();
             int position = 1;
             for (

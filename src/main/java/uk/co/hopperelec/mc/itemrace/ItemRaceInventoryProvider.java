@@ -45,7 +45,7 @@ public class ItemRaceInventoryProvider implements InventoryProvider {
     @Override
     public void init(@NotNull Player viewer, @NotNull InventoryContents contents) {
         final Pagination pagination = contents.pagination();
-        if (plugin.hasDepositedItems(player)) {
+        if (plugin.hasDepositedItemsInventory(player)) {
             pagination.setItems(
                     plugin.getDepositedItems(player).entrySet().stream()
                             .sorted(Map.Entry.comparingByValue(Comparator.comparingInt(Integer::intValue).reversed()))
