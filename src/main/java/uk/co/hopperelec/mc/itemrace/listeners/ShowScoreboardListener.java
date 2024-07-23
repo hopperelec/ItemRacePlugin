@@ -1,4 +1,4 @@
-package uk.co.hopperelec.mc.itemrace;
+package uk.co.hopperelec.mc.itemrace.listeners;
 
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;

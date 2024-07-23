@@ -14,6 +14,7 @@ import net.kyori.adventure.translation.TranslationRegistry;
 import net.kyori.adventure.util.UTF8ResourceBundleControl;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scoreboard.Criteria;
@@ -21,14 +22,15 @@ import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.NotNull;
+import uk.co.hopperelec.mc.itemrace.listeners.AutoDepositListener;
+import uk.co.hopperelec.mc.itemrace.listeners.ShowScoreboardListener;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.StreamSupport;
 
-import static uk.co.hopperelec.mc.itemrace.ItemRaceUtils.floorLog;
-import static uk.co.hopperelec.mc.itemrace.ItemRaceUtils.serializeTranslatable;
+import static uk.co.hopperelec.mc.itemrace.ItemRaceUtils.*;
 
 public final class ItemRacePlugin extends JavaPlugin {
     private final File DEPOSITED_ITEMS_FILE = new File(getDataFolder(), "deposited_items.yml");
@@ -77,7 +79,10 @@ public final class ItemRacePlugin extends JavaPlugin {
         );
 
         // TODO: Remove once implemented
-        if (config.pointsAwardMode() != PointsAwardMode.MANUAL_DEPOSIT) {
+        if (
+                config.pointsAwardMode() != PointsAwardMode.MANUAL_DEPOSIT &&
+                config.pointsAwardMode() != PointsAwardMode.AUTO_DEPOSIT
+        ) {
             getLogger().warning(config.pointsAwardMode().name()+" has not been implemented yet!");
         }
 
@@ -107,6 +112,10 @@ public final class ItemRacePlugin extends JavaPlugin {
                     config.autosaveFrequencyTicks(),
                     config.autosaveFrequencyTicks()
             );
+
+        // Start auto-depositing items
+        if (config.pointsAwardMode() == PointsAwardMode.AUTO_DEPOSIT)
+            getServer().getPluginManager().registerEvents(new AutoDepositListener(this), this);
 
         // Load commands
         final PaperCommandManager commandManager = new PaperCommandManager(this);
@@ -181,6 +190,24 @@ public final class ItemRacePlugin extends JavaPlugin {
         if (config.treatDenylistAsWhitelist())
             return Arrays.stream(config.denylistItems()).anyMatch(itemType -> itemType.is(material));
         return Arrays.stream(config.denylistItems()).noneMatch(itemType -> itemType.is(material));
+    }
+
+    public boolean canDeposit(@NotNull ItemStack itemStack) {
+        if (config.allowDamagedTools() && isDamaged(itemStack)) return false;
+        return canDeposit(itemStack.getType());
+    }
+
+    public void tryDeposit(@NotNull Player player, @NotNull Material itemType, int amount) {
+        if (canDeposit(itemType)) depositItems(player, itemType, amount);
+    }
+
+    public void tryDeposit(@NotNull Player player, @NotNull ItemStack itemStack) {
+        if (canDeposit(itemStack)) depositItems(player, itemStack.getType(), itemStack.getAmount());
+    }
+
+    public void clearAndTryDeposit(@NotNull Player player, @NotNull ItemStack itemStack) {
+        itemStack.setAmount(0);
+        tryDeposit(player, itemStack);
     }
 
     public int scoreForAmount(int amount) {

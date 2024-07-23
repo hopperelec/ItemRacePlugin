@@ -101,8 +101,7 @@ public class ItemRaceCommand extends BaseCommand {
                 return;
             }
             for (ItemStack item : player.getInventory().getStorageContents()) {
-                if (item == null || !plugin.canDeposit(item.getType())) continue;
-                if (!plugin.config.allowDamagedTools() && isDamaged(item)) continue;
+                if (item == null || !plugin.canDeposit(item)) continue;
                 plugin.depositItems(player, item.getType(), item.getAmount());
                 item.setAmount(0);
             }
