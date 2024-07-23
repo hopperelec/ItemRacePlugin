@@ -3,7 +3,7 @@ points:
   # - AUTO_DEPOSIT:
   #   All items a player picks up are automatically moved into their ItemRace inventory which they cannot take items out of.
   # - MANUAL_DEPOSIT:
-  #   Similar to AUTO_DEPOSIT, but players choose which items to move to their ItemRace inventory.
+  #   Similar to AUTO_DEPOSIT, but players choose which items to move to their ItemRace inventory using `/itemrace deposit`
   # - MAX_INVENTORY:
   #   Similar to AUTO_DEPOSIT, but players do not lose deposited items. Instead, their ItemRace inventory is based on the
   #   maximum amount of a given item they have held in their inventory at any time.

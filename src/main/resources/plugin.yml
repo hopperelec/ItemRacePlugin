@@ -9,3 +9,28 @@ api-version: 1.21
 commands:
   itemrace:
     description: Core command for the ItemRace plugin
+
+permissions:
+  itemrace.admin:
+    description: Permission to use all ItemRace admin commands
+    children:
+      itemrace.reset: true
+      itemrace.inventory: true
+      itemrace.togglescoreboard: true
+  itemrace.reset:
+    description: Allows resetting players' scores using `/itemrace reset [player]`
+  itemrace.deposit:
+    description: Allows depositing items in MANUAL_DEPOSIT mode using `/itemrace deposit`
+    default: true
+  itemrace.inventory:
+    description: Allows viewing players' ItemRace inventories using `/itemrace inventory [player]`
+    children:
+      itemrace.inventory.self: true
+  itemrace.inventory.self:
+    description: Allows viewing your own ItemRace inventory using `/itemrace inventory`
+    default: true
+  itemrace.leaderboard:
+    description: Allows viewing the ItemRace leaderboard using `/itemrace leaderboard`
+    default: true
+  itemrace.togglescoreboard:
+    description: Allows toggling the scoreboard using `/itemrace togglescoreboard`

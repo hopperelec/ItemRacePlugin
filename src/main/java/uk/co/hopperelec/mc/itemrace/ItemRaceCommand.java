@@ -34,6 +34,7 @@ public class ItemRaceCommand extends BaseCommand {
 
     @Subcommand("reset")
     @CommandCompletion("@players")
+    @CommandPermission("itemrace.reset")
     public void onReset(@NotNull CommandSender sender, @Optional @Name("player") OfflinePlayer player) {
         if (player == null) {
             plugin.resetDepositedItemsInventory();
@@ -51,6 +52,7 @@ public class ItemRaceCommand extends BaseCommand {
 
     @Subcommand("deposit|dep")
     @CommandCompletion("all|inventory @itemType")
+    @CommandPermission("itemrace.deposit")
     public void onDeposit(
         @NotNull Player player,
         @Optional @Name("amount") String amountStr, @Optional @Name("item") ItemType itemType
@@ -181,8 +183,14 @@ public class ItemRaceCommand extends BaseCommand {
 
     @Subcommand("inventory|inv")
     @CommandCompletion("@players")
+    @CommandPermission("itemrace.inventory.self")
     public void onInventory(@NotNull Player sender, @Optional @Name("player") OfflinePlayer player) {
         if (player == null) player = sender;
+        final Component playerNameComponent = Component.text(Objects.requireNonNull(player.getName()));
+        if (player != sender && !sender.hasPermission("itemrace.inventory")) {
+            sender.sendMessage(Component.translatable("command.inventory.others.denied", playerNameComponent));
+            return;
+        }
         final ItemRaceInventoryProvider inventoryProvider = new ItemRaceInventoryProvider(plugin, player);
         final SmartInventory inventory = SmartInventory.builder()
                 .provider(inventoryProvider)
@@ -190,10 +198,8 @@ public class ItemRaceCommand extends BaseCommand {
                 .title(
                         // SmartInventories doesn't support Adventure components
                         serializeTranslatable(
-                                Component.translatable(
-                                        "inventory.title",
-                                        Component.text(Objects.requireNonNull(player.getName()))
-                                ), sender.locale()
+                                Component.translatable("inventory.title", playerNameComponent),
+                                sender.locale()
                         )
                 ).build();
         inventoryProvider.setInventory(inventory);
@@ -201,6 +207,7 @@ public class ItemRaceCommand extends BaseCommand {
     }
 
     @Subcommand("leaderboard|lb")
+    @CommandPermission("itemrace.leaderboard")
     public void onLeaderboard(@NotNull CommandSender sender) {
         sender.sendMessage(Component.translatable("command.leaderboard.header"));
         if (plugin.hasDepositedItemsInventory()) {
@@ -232,6 +239,7 @@ public class ItemRaceCommand extends BaseCommand {
     }
 
     @Subcommand("togglescoreboard|tsb")
+    @CommandPermission("itemrace.togglescoreboard")
     public void onToggleScoreboard(@NotNull Player player) {
         if (player.getScoreboard() == plugin.scoreboard) {
             player.setScoreboard(getScoreboardManager().getMainScoreboard());
