@@ -45,28 +45,26 @@ public class ItemRaceInventoryProvider implements InventoryProvider {
     @Override
     public void init(@NotNull Player viewer, @NotNull InventoryContents contents) {
         final Pagination pagination = contents.pagination();
-        if (plugin.hasDepositedItemsInventory(player)) {
-            pagination.setItems(
-                    plugin.getDepositedItems(player).entrySet().stream()
-                            .sorted(Map.Entry.comparingByValue(Comparator.comparingInt(Integer::intValue).reversed()))
-                            .map(entry -> {
-                                final ItemStack itemStack = new ItemStack(entry.getKey(), entry.getValue());
-                                final ItemMeta itemMeta = itemStack.getItemMeta();
-                                itemMeta.itemName(
-                                        GlobalTranslator.render(
-                                                Component.translatable(
-                                                        "inventory.itemname",
-                                                        Component.translatable(itemStack.getType().translationKey()),
-                                                        Component.text(entry.getValue())
-                                                ), viewer.locale()
-                                        )
-                                );
-                                itemStack.setItemMeta(itemMeta);
-                                return ClickableItem.empty(itemStack);
-                            })
-                            .toArray(ClickableItem[]::new)
-            );
-        }
+        pagination.setItems(
+            plugin.getItems(player).entrySet().stream()
+                    .sorted(Map.Entry.comparingByValue(Comparator.comparingInt(Integer::intValue).reversed()))
+                    .map(entry -> {
+                        final ItemStack itemStack = new ItemStack(entry.getKey(), entry.getValue());
+                        final ItemMeta itemMeta = itemStack.getItemMeta();
+                        itemMeta.itemName(
+                                GlobalTranslator.render(
+                                        Component.translatable(
+                                                "inventory.itemname",
+                                                Component.translatable(itemStack.getType().translationKey()),
+                                                Component.text(entry.getValue())
+                                        ), viewer.locale()
+                                )
+                        );
+                        itemStack.setItemMeta(itemMeta);
+                        return ClickableItem.empty(itemStack);
+                    })
+                    .toArray(ClickableItem[]::new)
+        );
         pagination.setItemsPerPage(45);
         pagination.addToIterator(contents.newIterator(SlotIterator.Type.HORIZONTAL, 0, 0));
         if (!pagination.isFirst())

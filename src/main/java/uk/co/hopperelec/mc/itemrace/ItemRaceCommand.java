@@ -36,6 +36,10 @@ public class ItemRaceCommand extends BaseCommand {
     @CommandCompletion("@players")
     @CommandPermission("itemrace.reset")
     public void onReset(@NotNull CommandSender sender, @Optional @Name("player") OfflinePlayer player) {
+        if (!plugin.config.pointsAwardMode().hasOwnInventory) {
+            sender.sendMessage(Component.translatable("command.reset.disabled"));
+            return;
+        }
         if (player == null) {
             plugin.resetDepositedItemsInventory();
             sender.sendMessage(Component.translatable("command.reset.all"));
@@ -101,7 +105,7 @@ public class ItemRaceCommand extends BaseCommand {
                 return;
             }
             for (ItemStack item : player.getInventory().getStorageContents()) {
-                if (item == null || !plugin.canDeposit(item)) continue;
+                if (!plugin.canDeposit(item)) continue;
                 plugin.depositItems(player, item.getType(), item.getAmount());
                 item.setAmount(0);
             }
@@ -209,30 +213,31 @@ public class ItemRaceCommand extends BaseCommand {
     @CommandPermission("itemrace.leaderboard")
     public void onLeaderboard(@NotNull CommandSender sender) {
         sender.sendMessage(Component.translatable("command.leaderboard.header"));
-        if (plugin.hasDepositedItemsInventory()) {
-            final Map<OfflinePlayer, Integer> scores = plugin.calculateScores();
-            int position = 1;
+        final Map<OfflinePlayer, Integer> scores = plugin.calculateScores();
+        if (scores.isEmpty()) sender.sendMessage(Component.translatable("command.leaderboard.empty"));
+        else {
+            int positionI = 1;
+            int ownPosition = -1;
             for (
                     Map.Entry<OfflinePlayer, Integer> score :
                     scores.entrySet().stream().sorted(Map.Entry.comparingByValue()).limit(10).toList()
             ) {
+                if (score.getKey() == sender) ownPosition = positionI;
                 sender.sendMessage(
-                        Component.text(position++)
+                        Component.text(positionI++)
                                 .append(Component.text(". "))
                                 .append(Component.text(Objects.requireNonNull(score.getKey().getName())))
                                 .append(Component.text(" - "))
                                 .append(Component.text(score.getValue()))
                 );
             }
-            if (sender instanceof Player) {
+            if (ownPosition > 0) {
                 sender.sendMessage("");
                 sender.sendMessage(Component.translatable(
                         "command.leaderboard.position",
-                        Component.text(scores.get(sender)))
-                );
+                        Component.text(ownPosition)
+                ));
             }
-        } else {
-            sender.sendMessage(Component.translatable("command.leaderboard.empty"));
         }
         sender.sendMessage(Component.translatable("command.leaderboard.footer"));
     }
@@ -240,6 +245,10 @@ public class ItemRaceCommand extends BaseCommand {
     @Subcommand("togglescoreboard|tsb")
     @CommandPermission("itemrace.togglescoreboard")
     public void onToggleScoreboard(@NotNull Player player) {
+        if (!plugin.config.pointsAwardMode().hasOwnInventory) {
+            player.sendMessage(Component.translatable("command.togglescoreboard.disabled"));
+            return;
+        }
         if (player.getScoreboard() == plugin.scoreboard) {
             player.setScoreboard(getScoreboardManager().getMainScoreboard());
         } else {

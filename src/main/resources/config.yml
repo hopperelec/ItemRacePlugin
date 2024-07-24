@@ -11,6 +11,7 @@ points:
   #   Players are scored based on the items currently in their inventory.
   # - ENDER_CHEST:
   #   Similar to INVENTORY, but also includes items in their ender chest.
+  # NOTE: Currently, INVENTORY and ENDER_CHEST do not support the scoreboard and only work for players who are currently online!
   award_mode: MANUAL_DEPOSIT
 
   # The rate at which the number of items needed to get each point increases (positive integer)
@@ -27,7 +28,7 @@ points:
   award_for_first_item: true
 
   # The maximum number of points a player can be awarded for a single type of item (integer)
-  # If `award_points_mode` is `MANUAL_DEPOSIT`, players will be prevented from depositing more items than they can be awarded points for.
+  # If `points.award_mode` is `MANUAL_DEPOSIT`, players will be prevented from depositing more items than they can be awarded points for.
   # If this is negative, an unlimited number of points may be awarded.
   max_per_item_type: -1
 
@@ -38,18 +39,19 @@ points:
   allow_damaged_tools: true
 
 
-# These options have no effect if `award_mode` is `INVENTORY` or `ENDER_CHEST`
+# These options have no effect if `points.award_mode` is `INVENTORY` or `ENDER_CHEST`
 deposited_items:
   # Whether deposited items should persist between server restarts (true/false)
   # If this is true, deposited items will be saved to a file alongside this config when the server shuts down
   persist: true
 
   # How often, in minutes, deposited items should be auto-saved (number)
-  # This has no effect if `persist_deposited_items` is `false`
+  # This has no effect if `persist` is `false`
   # If this is 0, deposited items will only be saved when the plugin is disabled (e.g.: when the server shuts down)
   autosave_frequency: 5
 
 
+# NOTE: Currently, the scoreboard does not work if `points.award_mode is `INVENTORY` OR `ENDER_CHEST`
 scoreboard:
   # Whether the scoreboard is toggled on by default (on/off)
   # Players can toggle this on and off for themselves using `/itemrace togglescoreboard`
