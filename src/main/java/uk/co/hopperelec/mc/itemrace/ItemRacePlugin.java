@@ -7,26 +7,15 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import fr.minuskube.inv.InventoryManager;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.Style;
-import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.translation.GlobalTranslator;
 import net.kyori.adventure.translation.TranslationRegistry;
 import net.kyori.adventure.util.UTF8ResourceBundleControl;
 import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
-import org.bukkit.scoreboard.Objective;
-import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import uk.co.hopperelec.mc.itemrace.listeners.AutoDepositListener;
-import uk.co.hopperelec.mc.itemrace.listeners.MaxInventoryListener;
-import uk.co.hopperelec.mc.itemrace.listeners.ShowScoreboardListener;
+import uk.co.hopperelec.mc.itemrace.pointshandling.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,12 +25,9 @@ import java.util.stream.StreamSupport;
 import static uk.co.hopperelec.mc.itemrace.ItemRaceUtils.*;
 
 public final class ItemRacePlugin extends JavaPlugin {
-    private final File DEPOSITED_ITEMS_FILE = new File(getDataFolder(), "deposited_items.yml");
-    private final Map<OfflinePlayer, Map<Material, Integer>> depositedItems = new HashMap<>();
-    public Scoreboard scoreboard;
-    public Objective scoreboardObjective;
     public final InventoryManager inventoryManager = new InventoryManager(this);
     public final ItemRaceConfig config;
+    public final PointsHandler pointsHandler;
 
     public ItemRacePlugin() throws IOException {
         // Load translations
@@ -80,62 +66,22 @@ public final class ItemRacePlugin extends JavaPlugin {
                         .toArray(ItemType[]::new),
                 configFile.get("denylist").get("treat_as_allowlist").asBoolean()
         );
+
+        pointsHandler = switch (config.pointsAwardMode()) {
+            case AUTO_DEPOSIT -> new AutoDepositor(this);
+            case MANUAL_DEPOSIT -> new DepositedItems(this);
+            case MAX_INVENTORY -> new MaxInventoryPointsHandler(this);
+            case INVENTORY -> new InventoryPointsHandler(this);
+            case ENDER_CHEST -> new EnderChestPointsHandler(this);
+        };
     }
 
     @Override
     public void onEnable() {
-        // Create scoreboard
-        // Currently only works for award modes which have their own inventory
-        if (config.pointsAwardMode().hasOwnInventory) {
-            scoreboard = getServer().getScoreboardManager().getNewScoreboard();
-            scoreboardObjective = scoreboard.registerNewObjective(
-                    "score",
-                    Criteria.DUMMY,
-                    Component.translatable("scoreboard.title", Style.style(TextDecoration.BOLD))
-            );
-            scoreboardObjective.setDisplaySlot(config.scoreboardDisplaySlot());
-            if (config.defaultScoreboardState()) {
-                getServer().getPluginManager().registerEvents(new ShowScoreboardListener(scoreboard), this);
-            }
-        }
-
-        // Load persisted deposited items
-        persistItems: if (isPersistingDepositedItems() && DEPOSITED_ITEMS_FILE.exists()) {
-            final JsonNode fileTree;
-            try {
-                fileTree = new YAMLMapper().readTree(DEPOSITED_ITEMS_FILE);
-            } catch (IOException e) {
-                getLogger().warning("Failed to load deposited_items.yml: "+e.getMessage());
-                break persistItems;
-            }
-            fileTree.fields().forEachRemaining(inventory -> {
-                final OfflinePlayer player = getServer().getOfflinePlayer(UUID.fromString(inventory.getKey()));
-                inventory.getValue().fields().forEachRemaining(
-                        depositedItem -> setAmountDeposited(
-                                player,
-                                Material.valueOf(depositedItem.getKey()),
-                                depositedItem.getValue().asInt()
-                        )
-                );
-            });
-        }
+        pointsHandler.onEnable();
 
         // Initialize inventory for `/itemrace inventory`
         inventoryManager.init();
-
-        // Start auto-saving deposited items
-        if (isPersistingDepositedItems() && config.autosaveFrequencyTicks() > 0)
-            getServer().getScheduler().scheduleSyncRepeatingTask(
-                    this, this::saveDepositedItems,
-                    config.autosaveFrequencyTicks(),
-                    config.autosaveFrequencyTicks()
-            );
-
-        // Start listening for inventory changes if needed for configured pointsAwardMode
-        if (config.pointsAwardMode() == PointsAwardMode.AUTO_DEPOSIT)
-            getServer().getPluginManager().registerEvents(new AutoDepositListener(this), this);
-        else if (config.pointsAwardMode() == PointsAwardMode.MAX_INVENTORY)
-            getServer().getPluginManager().registerEvents(new MaxInventoryListener(this), this);
 
         // Load commands
         final PaperCommandManager commandManager = new PaperCommandManager(this);
@@ -145,7 +91,7 @@ public final class ItemRacePlugin extends JavaPlugin {
                         .filter(Objects::nonNull)
                         .map(ItemStack::getType)
                         .distinct()
-                        .filter(this::canDeposit)
+                        .filter(pointsHandler::canAwardPointsFor)
                         .map(Material::name)
                         .toList()
         );
@@ -172,146 +118,10 @@ public final class ItemRacePlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        if (config.persistDepositedItems()) saveDepositedItems();
+        pointsHandler.onDisable();
     }
 
     public void runInstantly(@NotNull Runnable runnable) {
         getServer().getScheduler().scheduleSyncDelayedTask(this, runnable);
-    }
-
-    public boolean isPersistingDepositedItems() {
-        return config.persistDepositedItems() && config.pointsAwardMode().hasOwnInventory;
-    }
-
-    public void saveDepositedItems() {
-        final Map<UUID, Map<String, Integer>> serializedDepositedItems = new HashMap<>();
-        depositedItems.forEach((player, items) -> {
-            final Map<String, Integer> serializedItems = new HashMap<>();
-            items.forEach((material, amount) -> serializedItems.put(material.name(), amount));
-            serializedDepositedItems.put(player.getUniqueId(), serializedItems);
-        });
-        try {
-            new YAMLMapper().writeValue(DEPOSITED_ITEMS_FILE, serializedDepositedItems);
-        } catch (IOException e) {
-            getLogger().warning("Failed to save deposited_items.yml: "+e.getMessage());
-        }
-    }
-
-    public boolean canDeposit(@Nullable Material material) {
-        if (material == null || material.isAir()) return false;
-        if (config.treatDenylistAsWhitelist())
-            return Arrays.stream(config.denylistItems()).anyMatch(itemType -> itemType.is(material));
-        return Arrays.stream(config.denylistItems()).noneMatch(itemType -> itemType.is(material));
-    }
-
-    public boolean canDeposit(@Nullable ItemStack itemStack) {
-        if (itemStack == null) return false;
-        if (config.allowDamagedTools() && isDamaged(itemStack)) return false;
-        return canDeposit(itemStack.getType());
-    }
-
-    public void tryDeposit(@NotNull Player player, @Nullable Material itemType, int amount) {
-        if (canDeposit(itemType)) depositItems(player, itemType, amount);
-    }
-    public void tryDeposit(@NotNull Player player, @Nullable ItemStack itemStack) {
-        if (canDeposit(itemStack)) depositItems(player, itemStack.getType(), itemStack.getAmount());
-    }
-    public void clearAndTryDeposit(@NotNull Player player, @NotNull ItemStack itemStack) {
-        tryDeposit(player, itemStack);
-        itemStack.setAmount(0);
-    }
-
-    public int scoreForAmount(int amount) {
-        if (amount == 0) return 0;
-        int score = floorLog(config.itemsPerPointGrowthRate(), amount);
-        if (config.maxPointsPerItemType() > 0) score = Math.min(score, config.maxPointsPerItemType());
-        if (config.awardPointForFirstItem() && config.itemsPerPointGrowthRate() > 1) return score + 1;
-        return score;
-    }
-
-    private void addInventoryToItemMap(@NotNull Inventory inventory, @NotNull Map<Material, Integer> items) {
-        for (ItemStack itemStack : inventory) {
-            if (canDeposit(itemStack)) {
-                items.put(itemStack.getType(), items.getOrDefault(itemStack.getType(), 0) + itemStack.getAmount());
-            }
-        }
-    }
-
-    @NotNull
-    public Map<Material, Integer> getItems(@NotNull OfflinePlayer offlinePlayer) {
-        if (
-                config.pointsAwardMode() == PointsAwardMode.INVENTORY ||
-                        config.pointsAwardMode() == PointsAwardMode.ENDER_CHEST
-        ) {
-            if (!(offlinePlayer instanceof Player player))
-                throw new IllegalStateException("Tried to get items of an offline player when the server is using a points award mode that requires a player to be online");
-            final Map<Material, Integer> items = new HashMap<>();
-            addInventoryToItemMap(player.getInventory(), items);
-            if (config.pointsAwardMode() == PointsAwardMode.ENDER_CHEST)
-                addInventoryToItemMap(player.getEnderChest(), items);
-            return items;
-        } else return depositedItems.getOrDefault(offlinePlayer, new HashMap<>());
-    }
-
-    private int calculateScore(@NotNull OfflinePlayer player) {
-        return getItems(player).values().stream()
-                .map(this::scoreForAmount)
-                .reduce(0, Integer::sum);
-    }
-
-    @NotNull
-    public Map<OfflinePlayer,Integer> calculateScores() {
-        if (config.pointsAwardMode().hasOwnInventory)
-            return depositedItems.entrySet().stream().collect(
-                    HashMap::new,
-                    (map, entry) -> map.put(entry.getKey(), calculateScore(entry.getKey())),
-                    HashMap::putAll
-            );
-        else
-            return getServer().getOnlinePlayers().stream()
-                    .map(player -> Map.entry(player, calculateScore(player)))
-                    .filter(entry -> entry.getValue() > 0)
-                    .collect(
-                        HashMap::new,
-                        (map, entry) -> map.put(entry.getKey(), entry.getValue()),
-                        HashMap::putAll
-                    );
-    }
-
-    private void throwIfNotHasOwnInventory() {
-        if (!config.pointsAwardMode().hasOwnInventory)
-            throw new IllegalStateException("This server is using a points award mode that does not have a deposited items inventory");
-    }
-
-    public int getAmountDeposited(@NotNull OfflinePlayer player, @NotNull Material itemType) {
-        throwIfNotHasOwnInventory();
-        return depositedItems.containsKey(player) ? depositedItems.get(player).getOrDefault(itemType, 0) : 0;
-    }
-
-    public void setAmountDeposited(@NotNull OfflinePlayer player, @NotNull Material itemType, int amount) {
-        throwIfNotHasOwnInventory();
-        if (!depositedItems.containsKey(player))
-            depositedItems.put(player, new HashMap<>());
-        depositedItems.get(player).put(itemType, amount);
-        scoreboardObjective.getScore(player).setScore(calculateScore(player));
-    }
-
-    public void depositItems(@NotNull OfflinePlayer player, @NotNull Material itemType, int amount) {
-        if (depositedItems.containsKey(player)) {
-            amount += depositedItems.get(player).getOrDefault(itemType, 0);
-        }
-        setAmountDeposited(player, itemType, amount);
-    }
-
-    public void resetDepositedItemsInventory() {
-        throwIfNotHasOwnInventory();
-        depositedItems.clear();
-        scoreboard.getEntries().forEach(scoreboard::resetScores);
-    }
-
-    public void resetDepositedItemsInventory(@NotNull OfflinePlayer player) {
-        throwIfNotHasOwnInventory();
-        depositedItems.remove(player);
-        scoreboard.resetScores(player);
     }
 }

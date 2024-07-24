@@ -11,6 +11,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import uk.co.hopperelec.mc.itemrace.pointshandling.DepositedItems;
 
 import java.util.Map;
 import java.util.Objects;
@@ -36,15 +37,15 @@ public class ItemRaceCommand extends BaseCommand {
     @CommandCompletion("@players")
     @CommandPermission("itemrace.reset")
     public void onReset(@NotNull CommandSender sender, @Optional @Name("player") OfflinePlayer player) {
-        if (!plugin.config.pointsAwardMode().hasOwnInventory) {
-            sender.sendMessage(Component.translatable("command.reset.disabled"));
+        if (!(plugin.pointsHandler instanceof DepositedItems depositedItems)) {
+            sender.sendMessage(Component.translatable("command.reset.unsupported"));
             return;
         }
         if (player == null) {
-            plugin.resetDepositedItemsInventory();
+            depositedItems.reset();
             sender.sendMessage(Component.translatable("command.reset.all"));
         } else {
-            plugin.resetDepositedItemsInventory(player);
+            depositedItems.reset(player);
             if (player.getName() != null) {
                 sender.sendMessage(Component.translatable(
                         "command.reset.player",
@@ -61,14 +62,14 @@ public class ItemRaceCommand extends BaseCommand {
         @NotNull Player player,
         @Optional @Name("amount") String amountStr, @Optional @Name("item") ItemType itemType
     ) {
-        if (plugin.config.pointsAwardMode() != PointsAwardMode.MANUAL_DEPOSIT) {
+        if (!(plugin.pointsHandler instanceof DepositedItems depositedItems)) {
             player.sendMessage(Component.translatable("command.deposit.disabled"));
             return;
         }
         final Material material;
         if (Objects.equals(amountStr, "all")) {
             material = itemType == null ? player.getInventory().getItemInMainHand().getType() : itemType.material();
-            if (!plugin.canDeposit(material)) {
+            if (!depositedItems.canAwardPointsFor(material)) {
                 player.sendMessage(
                         Component.translatable(
                                 "command.deposit.itemtype.denied",
@@ -90,7 +91,7 @@ public class ItemRaceCommand extends BaseCommand {
                 ));
                 return;
             }
-            plugin.depositItems(player, material, amountInt);
+            depositedItems.deposit(player, material, amountInt);
             player.sendMessage(
                     Component.translatable(
                             "command.deposit.all.success",
@@ -105,8 +106,8 @@ public class ItemRaceCommand extends BaseCommand {
                 return;
             }
             for (ItemStack item : player.getInventory().getStorageContents()) {
-                if (!plugin.canDeposit(item)) continue;
-                plugin.depositItems(player, item.getType(), item.getAmount());
+                if (item == null || !depositedItems.canAwardPointsFor(item)) continue;
+                depositedItems.deposit(player, item.getType(), item.getAmount());
                 item.setAmount(0);
             }
             player.sendMessage(Component.translatable("command.deposit.inventory.success"));
@@ -125,7 +126,7 @@ public class ItemRaceCommand extends BaseCommand {
             } else {
                 material = itemType.material();
             }
-            if (!plugin.canDeposit(material)) {
+            if (!depositedItems.canAwardPointsFor(material)) {
                 player.sendMessage(
                         Component.translatable(
                                 "command.deposit.itemtype.denied",
@@ -176,7 +177,7 @@ public class ItemRaceCommand extends BaseCommand {
                     return;
                 }
             }
-            plugin.depositItems(player, material, amountInt);
+            depositedItems.deposit(player, material, amountInt);
             player.sendMessage(Component.translatable("command.deposit.specific.success",
                     Component.text(amountInt),
                     Component.translatable(material.translationKey())
@@ -213,7 +214,7 @@ public class ItemRaceCommand extends BaseCommand {
     @CommandPermission("itemrace.leaderboard")
     public void onLeaderboard(@NotNull CommandSender sender) {
         sender.sendMessage(Component.translatable("command.leaderboard.header"));
-        final Map<OfflinePlayer, Integer> scores = plugin.calculateScores();
+        final Map<OfflinePlayer, Integer> scores = plugin.pointsHandler.calculateScores();
         if (scores.isEmpty()) sender.sendMessage(Component.translatable("command.leaderboard.empty"));
         else {
             int positionI = 1;
@@ -245,14 +246,14 @@ public class ItemRaceCommand extends BaseCommand {
     @Subcommand("togglescoreboard|tsb")
     @CommandPermission("itemrace.togglescoreboard")
     public void onToggleScoreboard(@NotNull Player player) {
-        if (!plugin.config.pointsAwardMode().hasOwnInventory) {
-            player.sendMessage(Component.translatable("command.togglescoreboard.disabled"));
+        if (!(plugin.pointsHandler instanceof DepositedItems depositedItems)) {
+            player.sendMessage(Component.translatable("command.togglescoreboard.unsupported"));
             return;
         }
-        if (player.getScoreboard() == plugin.scoreboard) {
+        if (player.getScoreboard() == depositedItems.scoreboard) {
             player.setScoreboard(getScoreboardManager().getMainScoreboard());
         } else {
-            player.setScoreboard(plugin.scoreboard);
+            player.setScoreboard(depositedItems.scoreboard);
         }
     }
 }

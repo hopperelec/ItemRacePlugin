@@ -1,24 +1,25 @@
 package uk.co.hopperelec.mc.itemrace;
 
 import org.bukkit.scoreboard.DisplaySlot;
+import uk.co.hopperelec.mc.itemrace.pointshandling.PointsAwardMode;
 
 public record ItemRaceConfig(
-    // Points
-    PointsAwardMode pointsAwardMode, // TODO: Implement pointsAwardMode
-    int itemsPerPointGrowthRate,
-    boolean awardPointForFirstItem,
-    int maxPointsPerItemType,
-    boolean allowDamagedTools,
+        // Points
+        PointsAwardMode pointsAwardMode,
+        int itemsPerPointGrowthRate,
+        boolean awardPointForFirstItem,
+        int maxPointsPerItemType,
+        boolean allowDamagedTools,
 
-    // Inventory
-    boolean persistDepositedItems,
-    int autosaveFrequencyTicks,
+        // Inventory
+        boolean persistDepositedItems,
+        int autosaveFrequencyTicks,
 
-    // Scoreboard
-    boolean defaultScoreboardState, // 'on' => true, 'off' => false
-    DisplaySlot scoreboardDisplaySlot,
+        // Scoreboard
+        boolean defaultScoreboardState, // 'on' => true, 'off' => false
+        DisplaySlot scoreboardDisplaySlot,
 
-    // Denylist
-    ItemType[] denylistItems,
-    boolean treatDenylistAsWhitelist
+        // Denylist
+        ItemType[] denylistItems,
+        boolean treatDenylistAsWhitelist
 ) {}

@@ -12,20 +12,20 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.jetbrains.annotations.NotNull;
 
-public abstract class PlayerInventoryListener implements Listener {
-    protected boolean listeningFor(@NotNull Player player) { return true; }
-    protected abstract void onMoveToInventory(@NotNull Player player, @NotNull ItemStack itemStack);
-    protected abstract void onPlayerPickupItem(@NotNull Player player, @NotNull EntityPickupItemEvent event);
+public interface PlayerInventoryListener extends Listener {
+    default boolean listeningFor(@NotNull Player player) { return true; }
+    void onMoveToInventory(@NotNull Player player, @NotNull ItemStack itemStack);
+    void onPlayerPickupItem(@NotNull Player player, @NotNull EntityPickupItemEvent event);
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onEntityPickupItem(@NotNull EntityPickupItemEvent event) {
+    default void onEntityPickupItem(@NotNull EntityPickupItemEvent event) {
         if (event.getEntity() instanceof Player player && listeningFor(player)) {
             onPlayerPickupItem(player, event);
         }
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onPlayerJoin(@NotNull PlayerJoinEvent event) {
+    default void onPlayerJoin(@NotNull PlayerJoinEvent event) {
         if (!listeningFor(event.getPlayer())) return;
         for (ItemStack itemStack : event.getPlayer().getInventory().getContents()) {
             if (itemStack != null)
@@ -34,7 +34,7 @@ public abstract class PlayerInventoryListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onInventoryClick(@NotNull InventoryClickEvent event) {
+    default void onInventoryClick(@NotNull InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player && listeningFor(player))) return;
         if (event.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
             final ItemStack movedItem = event.getCurrentItem();

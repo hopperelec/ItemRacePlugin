@@ -46,7 +46,7 @@ public class ItemRaceInventoryProvider implements InventoryProvider {
     public void init(@NotNull Player viewer, @NotNull InventoryContents contents) {
         final Pagination pagination = contents.pagination();
         pagination.setItems(
-            plugin.getItems(player).entrySet().stream()
+            plugin.pointsHandler.getItems(player).entrySet().stream()
                     .sorted(Map.Entry.comparingByValue(Comparator.comparingInt(Integer::intValue).reversed()))
                     .map(entry -> {
                         final ItemStack itemStack = new ItemStack(entry.getKey(), entry.getValue());
