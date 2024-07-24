@@ -23,6 +23,7 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.NotNull;
 import uk.co.hopperelec.mc.itemrace.listeners.AutoDepositListener;
+import uk.co.hopperelec.mc.itemrace.listeners.MaxInventoryListener;
 import uk.co.hopperelec.mc.itemrace.listeners.ShowScoreboardListener;
 
 import java.io.File;
@@ -85,23 +86,43 @@ public final class ItemRacePlugin extends JavaPlugin {
         ) {
             getLogger().warning(config.pointsAwardMode().name()+" has not been implemented yet!");
         }
-
-        // Load persisted deposited items
-        if (isPersistingDepositedItems() && DEPOSITED_ITEMS_FILE.exists())
-            new YAMLMapper().readTree(DEPOSITED_ITEMS_FILE).fields().forEachRemaining(inventory -> {
-                final Map<Material, Integer> items = new HashMap<>();
-                inventory.getValue().fields().forEachRemaining(
-                        depositedItem -> items.put(
-                                Material.valueOf(depositedItem.getKey()),
-                                depositedItem.getValue().asInt()
-                        )
-                );
-                depositedItems.put(getServer().getOfflinePlayer(UUID.fromString(inventory.getKey())), items);
-            });
     }
 
     @Override
     public void onEnable() {
+        // Create scoreboard
+        scoreboard = getServer().getScoreboardManager().getNewScoreboard();
+        scoreboardObjective = scoreboard.registerNewObjective(
+                "score",
+                Criteria.DUMMY,
+                Component.translatable("scoreboard.title", Style.style(TextDecoration.BOLD))
+        );
+        scoreboardObjective.setDisplaySlot(config.scoreboardDisplaySlot());
+        if (config.defaultScoreboardState()) {
+            getServer().getPluginManager().registerEvents(new ShowScoreboardListener(scoreboard), this);
+        }
+
+        // Load persisted deposited items
+        persistItems: if (isPersistingDepositedItems() && DEPOSITED_ITEMS_FILE.exists()) {
+            final JsonNode fileTree;
+            try {
+                fileTree = new YAMLMapper().readTree(DEPOSITED_ITEMS_FILE);
+            } catch (IOException e) {
+                getLogger().warning("Failed to load deposited_items.yml: "+e.getMessage());
+                break persistItems;
+            }
+            fileTree.fields().forEachRemaining(inventory -> {
+                final OfflinePlayer player = getServer().getOfflinePlayer(UUID.fromString(inventory.getKey()));
+                inventory.getValue().fields().forEachRemaining(
+                        depositedItem -> setAmountDeposited(
+                                player,
+                                Material.valueOf(depositedItem.getKey()),
+                                depositedItem.getValue().asInt()
+                        )
+                );
+            });
+        }
+
         // Initialize inventory for `/itemrace inventory`
         inventoryManager.init();
 
@@ -113,9 +134,14 @@ public final class ItemRacePlugin extends JavaPlugin {
                     config.autosaveFrequencyTicks()
             );
 
-        // Start auto-depositing items
-        if (config.pointsAwardMode() == PointsAwardMode.AUTO_DEPOSIT)
-            getServer().getPluginManager().registerEvents(new AutoDepositListener(this), this);
+        // Start listening for inventory changes if needed for configured pointsAwardMode
+        switch (config.pointsAwardMode()) {
+            case AUTO_DEPOSIT:
+                getServer().getPluginManager().registerEvents(new AutoDepositListener(this), this);
+                break;
+            case MAX_INVENTORY:
+                getServer().getPluginManager().registerEvents(new MaxInventoryListener(this), this);
+        }
 
         // Load commands
         final PaperCommandManager commandManager = new PaperCommandManager(this);
@@ -148,23 +174,15 @@ public final class ItemRacePlugin extends JavaPlugin {
         });
         commandManager.registerCommand(new ItemRaceCommand(this));
         commandManager.enableUnstableAPI("help");
-
-        // Create scoreboard
-        scoreboard = getServer().getScoreboardManager().getNewScoreboard();
-        scoreboardObjective = scoreboard.registerNewObjective(
-                "score",
-                Criteria.DUMMY,
-                Component.translatable("scoreboard.title", Style.style(TextDecoration.BOLD))
-        );
-        scoreboardObjective.setDisplaySlot(config.scoreboardDisplaySlot());
-        if (config.defaultScoreboardState()) {
-            getServer().getPluginManager().registerEvents(new ShowScoreboardListener(scoreboard), this);
-        }
     }
 
     @Override
     public void onDisable() {
         if (config.persistDepositedItems()) saveDepositedItems();
+    }
+
+    public void runInstantly(@NotNull Runnable runnable) {
+        getServer().getScheduler().scheduleSyncDelayedTask(this, runnable);
     }
 
     public boolean isPersistingDepositedItems() {
@@ -206,8 +224,8 @@ public final class ItemRacePlugin extends JavaPlugin {
     }
 
     public void clearAndTryDeposit(@NotNull Player player, @NotNull ItemStack itemStack) {
-        itemStack.setAmount(0);
         tryDeposit(player, itemStack);
+        itemStack.setAmount(0);
     }
 
     public int scoreForAmount(int amount) {
@@ -239,16 +257,25 @@ public final class ItemRacePlugin extends JavaPlugin {
             throw new IllegalStateException("This server is using a points award mode that does not have a deposited items inventory");
     }
 
-    public void depositItems(@NotNull OfflinePlayer player, @NotNull Material itemType, int amount) {
+    public int getAmountDeposited(@NotNull OfflinePlayer player, @NotNull Material itemType) {
         throwIfNotHasOwnInventory();
-        int currentAmountDeposited = 0;
+        return depositedItems.containsKey(player) ? depositedItems.get(player).getOrDefault(itemType, 0) : 0;
+    }
+
+    public void setAmountDeposited(@NotNull OfflinePlayer player, @NotNull Material itemType, int amount) {
+        throwIfNotHasOwnInventory();
         if (!depositedItems.containsKey(player)) {
             depositedItems.put(player, new HashMap<>());
-        } else {
-            currentAmountDeposited = depositedItems.get(player).getOrDefault(itemType, 0);
         }
-        depositedItems.get(player).put(itemType, currentAmountDeposited + amount);
+        depositedItems.get(player).put(itemType, amount);
         scoreboardObjective.getScore(player).setScore(calculateScore(player));
+    }
+
+    public void depositItems(@NotNull OfflinePlayer player, @NotNull Material itemType, int amount) {
+        if (depositedItems.containsKey(player)) {
+            amount += depositedItems.get(player).getOrDefault(itemType, 0);
+        }
+        setAmountDeposited(player, itemType, amount);
     }
 
     public void resetDepositedItemsInventory() {
