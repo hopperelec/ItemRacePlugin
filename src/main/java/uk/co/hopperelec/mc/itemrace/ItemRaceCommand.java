@@ -158,7 +158,7 @@ public class ItemRaceCommand extends BaseCommand {
                 for (ItemStack item : player.getInventory().getStorageContents()) {
                     if (item == null || item.getType() != material) continue;
                     if (!plugin.config.allowDamagedTools() && isDamaged(item)) continue;
-                    if (item.getAmount() >= amountToRemove) {
+                    if (item.getAmount() < amountToRemove) {
                         amountRemoved += item.getAmount();
                         amountToRemove -= item.getAmount();
                         item.setAmount(0);
@@ -176,6 +176,7 @@ public class ItemRaceCommand extends BaseCommand {
                     ));
                     return;
                 }
+                amountInt -= amountToRemove;
             }
             depositedItems.deposit(player, material, amountInt);
             player.sendMessage(Component.translatable("command.deposit.specific.success",
