@@ -3,8 +3,6 @@ package uk.co.hopperelec.mc.itemrace.pointshandling;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import uk.co.hopperelec.mc.itemrace.ItemRacePlugin;
 
@@ -14,14 +12,6 @@ import java.util.Map;
 public class InventoryPointsHandler extends PointsHandler {
     public InventoryPointsHandler(@NotNull ItemRacePlugin plugin) {
         super(plugin);
-    }
-
-    protected void addInventoryToItemMap(@NotNull Inventory inventory, @NotNull Map<Material, Integer> items) {
-        for (ItemStack itemStack : inventory) {
-            if (canAwardPointsFor(itemStack)) {
-                items.put(itemStack.getType(), items.getOrDefault(itemStack.getType(), 0) + itemStack.getAmount());
-            }
-        }
     }
 
     @Override

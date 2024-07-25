@@ -8,7 +8,7 @@ public record ItemRaceConfig(
         PointsAwardMode pointsAwardMode,
         int itemsPerPointGrowthRate,
         boolean awardPointForFirstItem,
-        int maxPointsPerItemType,
+        int maxPointsPerItemType, // TODO: Prevent players from manually depositing more than this
         boolean allowDamagedTools,
 
         // Inventory

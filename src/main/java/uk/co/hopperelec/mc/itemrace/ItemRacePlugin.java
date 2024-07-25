@@ -11,10 +11,12 @@ import net.kyori.adventure.translation.GlobalTranslator;
 import net.kyori.adventure.translation.TranslationRegistry;
 import net.kyori.adventure.util.UTF8ResourceBundleControl;
 import org.bukkit.Material;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.jetbrains.annotations.NotNull;
+import uk.co.hopperelec.mc.itemrace.listeners.DepositGUIListener;
 import uk.co.hopperelec.mc.itemrace.pointshandling.*;
 
 import java.io.File;
@@ -69,7 +71,7 @@ public final class ItemRacePlugin extends JavaPlugin {
 
         pointsHandler = switch (config.pointsAwardMode()) {
             case AUTO_DEPOSIT -> new AutoDepositor(this);
-            case MANUAL_DEPOSIT -> new DepositedItems(this);
+            case DEPOSIT_COMMAND, DEPOSIT_GUI -> new DepositedItems(this);
             case MAX_INVENTORY -> new MaxInventoryPointsHandler(this);
             case INVENTORY -> new InventoryPointsHandler(this);
             case ENDER_CHEST -> new EnderChestPointsHandler(this);
@@ -79,10 +81,12 @@ public final class ItemRacePlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         pointsHandler.onEnable();
-
         // Initialize inventory for `/itemrace inventory`
         inventoryManager.init();
-
+        // Listen for interactions with the deposit GUI
+        if (pointsHandler instanceof DepositedItems depositedItems) {
+            getServer().getPluginManager().registerEvents(new DepositGUIListener(depositedItems), this);
+        }
         // Load commands
         final PaperCommandManager commandManager = new PaperCommandManager(this);
         commandManager.getCommandCompletions().registerCompletion(
@@ -123,5 +127,9 @@ public final class ItemRacePlugin extends JavaPlugin {
 
     public void runInstantly(@NotNull Runnable runnable) {
         getServer().getScheduler().scheduleSyncDelayedTask(this, runnable);
+    }
+    
+    public void openDepositGUI(@NotNull Player player) {
+        player.openInventory(new DepositGUI(this).getInventory());
     }
 }

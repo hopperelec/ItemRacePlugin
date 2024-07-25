@@ -2,6 +2,7 @@ package uk.co.hopperelec.mc.itemrace.pointshandling;
 
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -71,5 +72,13 @@ public abstract class PointsHandler {
         if (itemStack == null) return false;
         if (config().allowDamagedTools() && isDamaged(itemStack)) return false;
         return canAwardPointsFor(itemStack.getType());
+    }
+
+    protected void addInventoryToItemMap(@NotNull Inventory inventory, @NotNull Map<Material, Integer> items) {
+        for (ItemStack itemStack : inventory) {
+            if (canAwardPointsFor(itemStack)) {
+                items.put(itemStack.getType(), items.getOrDefault(itemStack.getType(), 0) + itemStack.getAmount());
+            }
+        }
     }
 }

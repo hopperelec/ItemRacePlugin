@@ -8,6 +8,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.Objective;
@@ -121,11 +122,15 @@ public class DepositedItems extends PointsHandler {
         return items.containsKey(player) ? items.get(player).getOrDefault(itemType, 0) : 0;
     }
 
+    protected void refreshScoreboard(@NotNull OfflinePlayer player) {
+        scoreboardObjective.getScore(player).setScore(calculateScore(player));
+    }
+
     public void setAmount(@NotNull OfflinePlayer player, @NotNull Material itemType, int amount) {
         if (!items.containsKey(player))
             items.put(player, new HashMap<>());
         items.get(player).put(itemType, amount);
-        scoreboardObjective.getScore(player).setScore(calculateScore(player));
+        refreshScoreboard(player);
     }
 
     public void deposit(@NotNull OfflinePlayer player, @NotNull Material itemType, int amount) {
@@ -133,6 +138,12 @@ public class DepositedItems extends PointsHandler {
             amount += items.get(player).getOrDefault(itemType, 0);
         }
         setAmount(player, itemType, amount);
+    }
+    public void deposit(@NotNull OfflinePlayer player, @NotNull Inventory inventory) {
+        if (!items.containsKey(player))
+            items.put(player, new HashMap<>());
+        addInventoryToItemMap(inventory, items.get(player));
+        refreshScoreboard(player);
     }
 
     public void reset() {

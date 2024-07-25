@@ -2,7 +2,8 @@ package uk.co.hopperelec.mc.itemrace.pointshandling;
 
 public enum PointsAwardMode {
     AUTO_DEPOSIT,
-    MANUAL_DEPOSIT,
+    DEPOSIT_COMMAND,
+    DEPOSIT_GUI,
     MAX_INVENTORY,
     INVENTORY,
     ENDER_CHEST

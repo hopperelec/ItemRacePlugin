@@ -14,15 +14,21 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
+import uk.co.hopperelec.mc.itemrace.pointshandling.PointsHandler;
 
 import java.util.Comparator;
 import java.util.Locale;
 import java.util.Map;
 
 public class ItemRaceInventoryProvider implements InventoryProvider {
-    private final ItemRacePlugin plugin;
+    private final PointsHandler pointsHandler;
     private final OfflinePlayer player;
     private SmartInventory inventory;
+
+    public ItemRaceInventoryProvider(@NotNull PointsHandler pointsHandler, @NotNull OfflinePlayer player) {
+        this.pointsHandler = pointsHandler;
+        this.player = player;
+    }
 
     @NotNull
     private static ItemStack createArrow(@NotNull String nameKey, @NotNull Locale locale) {
@@ -33,11 +39,6 @@ public class ItemRaceInventoryProvider implements InventoryProvider {
         return itemStack;
     }
 
-    public ItemRaceInventoryProvider(@NotNull ItemRacePlugin plugin, @NotNull OfflinePlayer player) {
-        this.plugin = plugin;
-        this.player = player;
-    }
-
     public void setInventory(@NotNull SmartInventory inventory) {
         this.inventory = inventory;
     }
@@ -46,7 +47,7 @@ public class ItemRaceInventoryProvider implements InventoryProvider {
     public void init(@NotNull Player viewer, @NotNull InventoryContents contents) {
         final Pagination pagination = contents.pagination();
         pagination.setItems(
-            plugin.pointsHandler.getItems(player).entrySet().stream()
+            pointsHandler.getItems(player).entrySet().stream()
                     .sorted(Map.Entry.comparingByValue(Comparator.comparingInt(Integer::intValue).reversed()))
                     .map(entry -> {
                         final ItemStack itemStack = new ItemStack(entry.getKey(), entry.getValue());

@@ -12,6 +12,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import uk.co.hopperelec.mc.itemrace.pointshandling.DepositedItems;
+import uk.co.hopperelec.mc.itemrace.pointshandling.PointsAwardMode;
 
 import java.util.Map;
 import java.util.Objects;
@@ -54,6 +55,121 @@ public class ItemRaceCommand extends BaseCommand {
             }
         }
     }
+    
+    protected void onDepositAll(@NotNull Player player, @NotNull Material material) {
+        if (!(plugin.pointsHandler instanceof DepositedItems depositedItems)) {
+            player.sendMessage(Component.translatable("command.deposit.disabled"));
+            return;
+        }
+        // Check if the given material can be deposited
+        if (!depositedItems.canAwardPointsFor(material)) {
+            player.sendMessage(
+                    Component.translatable(
+                            "command.deposit.itemtype.denied",
+                            Component.translatable(material)
+                    )
+            );
+            return;
+        }
+        // Remove and count all items of that type in their inventory
+        int amountInt = 0;
+        for (ItemStack item : player.getInventory().all(material).values()) {
+            if (!plugin.config.allowDamagedTools() && isDamaged(item)) continue;
+            amountInt += item.getAmount();
+            item.setAmount(0);
+        }
+        if (amountInt == 0) {
+            player.sendMessage(Component.translatable(
+                    "command.deposit.all.none",
+                    Component.translatable(material.translationKey())
+            ));
+            return;
+        }
+        // Items have been successfully taken from their inventory
+        depositedItems.deposit(player, material, amountInt);
+        player.sendMessage(
+                Component.translatable(
+                        "command.deposit.all.success",
+                        Component.text(amountInt),
+                        Component.translatable(material.translationKey())
+                )
+        );
+    }
+    
+    protected void onDepositInventory(@NotNull Player player) {
+        if (!(plugin.pointsHandler instanceof DepositedItems depositedItems)) {
+            player.sendMessage(Component.translatable("command.deposit.disabled"));
+            return;
+        }
+        
+        for (ItemStack item : player.getInventory().getStorageContents()) {
+            if (item == null || !depositedItems.canAwardPointsFor(item)) continue;
+            depositedItems.deposit(player, item.getType(), item.getAmount());
+            item.setAmount(0);
+        }
+        player.sendMessage(Component.translatable("command.deposit.inventory.success"));
+    }
+    
+    private int removeItems(@NotNull Player player, @NotNull Material material, int amount) {
+        int amountRemoved = 0;
+        int amountToRemove = amount;
+        for (ItemStack item : player.getInventory().getStorageContents()) {
+            if (item == null || item.getType() != material) continue;
+            if (!plugin.config.allowDamagedTools() && isDamaged(item)) continue;
+            if (item.getAmount() < amountToRemove) {
+                amountRemoved += item.getAmount();
+                amountToRemove -= item.getAmount();
+                item.setAmount(0);
+            } else {
+                amountRemoved = amount;
+                item.setAmount(item.getAmount() - amountToRemove);
+                break;
+            }
+        }
+        return amountRemoved;
+    }
+    
+    protected void onDeposit(@NotNull Player player, int amount, @NotNull Material material, boolean mainHand) {
+        if (!(plugin.pointsHandler instanceof DepositedItems depositedItems)) {
+            player.sendMessage(Component.translatable("command.deposit.disabled"));
+            return;
+        }
+        // Check if the amount is valid
+        if (amount <= 0) {
+            player.sendMessage(Component.translatable("command.deposit.amount.zero"));
+            return;
+        }
+        // Check if the given material can be deposited
+        if (!depositedItems.canAwardPointsFor(material)) {
+            player.sendMessage(
+                    Component.translatable(
+                            "command.deposit.itemtype.denied",
+                            Component.translatable(material)
+                    )
+            );
+            return;
+        }
+        // Remove items from inventory
+        if (mainHand) {
+            player.getInventory().setItemInMainHand(null);
+        } else {
+            amount = removeItems(player, material, amount);
+            if (amount == 0) {
+                player.sendMessage(Component.translatable(
+                        "command.deposit.amount.insufficient",
+                        Component.text(amount),
+                        Component.text(material.name())
+                ));
+                return;
+            }
+        }
+        // Items have been successfully taken from their inventory
+        depositedItems.deposit(player, material, amount);
+        player.sendMessage(Component.translatable("command.deposit.specific.success",
+                Component.text(amount),
+                Component.translatable(material.translationKey())
+        ));
+    }
 
     @Subcommand("deposit|dep")
     @CommandCompletion("all|inventory @itemType")
@@ -62,127 +178,47 @@ public class ItemRaceCommand extends BaseCommand {
         @NotNull Player player,
         @Optional @Name("amount") String amountStr, @Optional @Name("item") ItemType itemType
     ) {
-        if (!(plugin.pointsHandler instanceof DepositedItems depositedItems)) {
-            player.sendMessage(Component.translatable("command.deposit.disabled"));
-            return;
-        }
-        final Material material;
         if (Objects.equals(amountStr, "all")) {
-            material = itemType == null ? player.getInventory().getItemInMainHand().getType() : itemType.material();
-            if (!depositedItems.canAwardPointsFor(material)) {
-                player.sendMessage(
-                        Component.translatable(
-                                "command.deposit.itemtype.denied",
-                                Component.translatable(material)
-                        )
-                );
-                return;
-            }
-            int amountInt = 0;
-            for (ItemStack item : player.getInventory().all(material).values()) {
-                if (!plugin.config.allowDamagedTools() && isDamaged(item)) continue;
-                amountInt += item.getAmount();
-                item.setAmount(0);
-            }
-            if (amountInt == 0) {
-                player.sendMessage(Component.translatable(
-                        "command.deposit.all.none",
-                        Component.translatable(material.translationKey())
-                ));
-                return;
-            }
-            depositedItems.deposit(player, material, amountInt);
-            player.sendMessage(
-                    Component.translatable(
-                            "command.deposit.all.success",
-                            Component.text(amountInt),
-                            Component.translatable(material.translationKey())
-                    )
-            );
-
+            onDepositAll(player, itemType == null ? player.getInventory().getItemInMainHand().getType() : itemType.material());
+            
         } else if (Objects.equals(amountStr, "inventory")) {
             if (itemType != null) {
                 player.sendMessage(Component.translatable("command.deposit.inventory.itemtype"));
                 return;
             }
-            for (ItemStack item : player.getInventory().getStorageContents()) {
-                if (item == null || !depositedItems.canAwardPointsFor(item)) continue;
-                depositedItems.deposit(player, item.getType(), item.getAmount());
-                item.setAmount(0);
-            }
-            player.sendMessage(Component.translatable("command.deposit.inventory.success"));
-
+            onDepositInventory(player);
+            
+        } else if (plugin.config.pointsAwardMode() == PointsAwardMode.DEPOSIT_GUI && amountStr == null) {
+            plugin.openDepositGUI(player);
+            
         } else {
-            int amountInt = -1;
+            final Material material;
             if (itemType == null) {
                 if (!plugin.config.allowDamagedTools() && isDamaged(player.getInventory().getItemInMainHand())) {
                     player.sendMessage(Component.translatable("command.deposit.specific.damaged"));
                     return;
                 }
                 material = player.getInventory().getItemInMainHand().getType();
-                if (amountStr == null) {
-                    amountInt = player.getInventory().getItemInMainHand().getAmount();
-                }
             } else {
                 material = itemType.material();
             }
-            if (!depositedItems.canAwardPointsFor(material)) {
-                player.sendMessage(
-                        Component.translatable(
-                                "command.deposit.itemtype.denied",
-                                Component.translatable(material)
-                        )
-                );
-                return;
-            }
-            if (amountInt == -1) {
+
+            final int amountInt;
+            if (amountStr == null) {
+                amountInt = player.getInventory().getItemInMainHand().getAmount();
+            } else {
                 try {
                     amountInt = Integer.parseInt(amountStr);
                 } catch (NumberFormatException e) {
                     player.sendMessage(Component.translatable(
                             "command.deposit.amount.invalid",
-                            Component.text(amountInt))
+                            Component.text(amountStr))
                     );
                     return;
                 }
             }
-            if (amountInt <= 0) {
-                player.sendMessage(Component.translatable("command.deposit.amount.zero"));
-                return;
-            }
-            if (itemType == null && amountStr == null) {
-                player.getInventory().setItemInMainHand(null);
-            } else {
-                int amountRemoved = 0;
-                int amountToRemove = amountInt;
-                for (ItemStack item : player.getInventory().getStorageContents()) {
-                    if (item == null || item.getType() != material) continue;
-                    if (!plugin.config.allowDamagedTools() && isDamaged(item)) continue;
-                    if (item.getAmount() < amountToRemove) {
-                        amountRemoved += item.getAmount();
-                        amountToRemove -= item.getAmount();
-                        item.setAmount(0);
-                    } else {
-                        amountRemoved = amountInt;
-                        item.setAmount(item.getAmount() - amountToRemove);
-                        break;
-                    }
-                }
-                if (amountRemoved == 0) {
-                    player.sendMessage(Component.translatable(
-                            "command.deposit.amount.insufficient",
-                            Component.text(amountInt),
-                            Component.text(material.name())
-                    ));
-                    return;
-                }
-                amountInt -= amountToRemove;
-            }
-            depositedItems.deposit(player, material, amountInt);
-            player.sendMessage(Component.translatable("command.deposit.specific.success",
-                    Component.text(amountInt),
-                    Component.translatable(material.translationKey())
-            ));
+
+            onDeposit(player, amountInt, material, itemType == null && amountStr == null);
         }
     }
 
@@ -196,7 +232,7 @@ public class ItemRaceCommand extends BaseCommand {
             sender.sendMessage(Component.translatable("command.inventory.others.denied", playerNameComponent));
             return;
         }
-        final ItemRaceInventoryProvider inventoryProvider = new ItemRaceInventoryProvider(plugin, player);
+        final ItemRaceInventoryProvider inventoryProvider = new ItemRaceInventoryProvider(plugin.pointsHandler, player);
         final SmartInventory inventory = SmartInventory.builder()
                 .provider(inventoryProvider)
                 .manager(plugin.inventoryManager)
