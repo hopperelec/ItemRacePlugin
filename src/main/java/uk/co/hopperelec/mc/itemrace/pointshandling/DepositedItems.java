@@ -29,8 +29,14 @@ public class DepositedItems extends PointsHandler {
     public Objective scoreboardObjective;
     private final Map<OfflinePlayer, Map<Material, Integer>> items = new HashMap<>();
     private final File FILE = new File(plugin.getDataFolder(), "deposited_items.yml");
+    public boolean throwIfOverDeposit = false;
     
-    public DepositedItems(ItemRacePlugin plugin) {
+    public DepositedItems(@NotNull ItemRacePlugin plugin, boolean throwIfOverDeposit) {
+        super(plugin);
+        this.throwIfOverDeposit = throwIfOverDeposit;
+    }
+
+    public DepositedItems(@NotNull ItemRacePlugin plugin) {
         super(plugin);
     }
 
@@ -43,12 +49,12 @@ public class DepositedItems extends PointsHandler {
                 Criteria.DUMMY,
                 Component.translatable("scoreboard.title", Style.style(TextDecoration.BOLD))
         );
-        scoreboardObjective.setDisplaySlot(config().scoreboardDisplaySlot());
-        if (config().defaultScoreboardState()) {
+        scoreboardObjective.setDisplaySlot(config().scoreboardDisplaySlot);
+        if (config().defaultScoreboardState) {
             plugin.getServer().getPluginManager().registerEvents(new ShowScoreboardListener(scoreboard), plugin);
         }
 
-        persistItems: if (config().persistDepositedItems() && FILE.exists()) {
+        persistItems: if (config().persistDepositedItems && FILE.exists()) {
             // Load persisted deposited items
             final JsonNode fileTree;
             try {
@@ -63,24 +69,24 @@ public class DepositedItems extends PointsHandler {
                         depositedItem -> setAmount(
                                 player,
                                 Material.valueOf(depositedItem.getKey()),
-                                depositedItem.getValue().asInt()
+                                Math.min(depositedItem.getValue().asInt(), config().maxItemsAwardedPoints)
                         )
                 );
             });
 
             // Start auto-saving deposited items
-            if (config().autosaveFrequencyTicks() > 0)
+            if (config().autosaveFrequencyTicks > 0)
                 plugin.getServer().getScheduler().scheduleSyncRepeatingTask(
                         plugin, this::save,
-                        config().autosaveFrequencyTicks(),
-                        config().autosaveFrequencyTicks()
+                        config().autosaveFrequencyTicks,
+                        config().autosaveFrequencyTicks
                 );
         }
     }
 
     @Override
     public void onDisable() {
-        if (config().persistDepositedItems()) save();
+        if (config().persistDepositedItems) save();
     }
 
     @Override
@@ -108,10 +114,10 @@ public class DepositedItems extends PointsHandler {
     }
 
     public void tryDeposit(@NotNull Player player, @NotNull Material itemType, int amount) {
-        if (canAwardPointsFor(itemType)) deposit(player, itemType, amount);
+        if (config().awardPointsFor(itemType)) deposit(player, itemType, amount);
     }
     public void tryDeposit(@NotNull Player player, @NotNull ItemStack itemStack) {
-        if (canAwardPointsFor(itemStack)) deposit(player, itemStack.getType(), itemStack.getAmount());
+        if (config().awardPointsFor(itemStack)) deposit(player, itemStack.getType(), itemStack.getAmount());
     }
     public void clearAndTryDeposit(@NotNull Player player, @NotNull ItemStack itemStack) {
         tryDeposit(player, itemStack);
@@ -127,23 +133,49 @@ public class DepositedItems extends PointsHandler {
     }
 
     public void setAmount(@NotNull OfflinePlayer player, @NotNull Material itemType, int amount) {
+        if (amount < 0)
+            throw new IllegalArgumentException("Amount cannot be negative");
+        if (throwIfOverDeposit && amount > config().maxItemsAwardedPoints)
+            throw new IllegalArgumentException("Amount exceeds maxItemsAwardedPoints");
+        if (!config().awardPointsFor(itemType))
+            throw new IllegalArgumentException("Tried to set the amount of an item type which is not awarded points");
         if (!items.containsKey(player))
             items.put(player, new HashMap<>());
+        else if (amount == 0)
+            items.get(player).remove(itemType);
         items.get(player).put(itemType, amount);
         refreshScoreboard(player);
     }
 
     public void deposit(@NotNull OfflinePlayer player, @NotNull Material itemType, int amount) {
-        if (items.containsKey(player)) {
+        if (items.containsKey(player))
             amount += items.get(player).getOrDefault(itemType, 0);
-        }
         setAmount(player, itemType, amount);
     }
     public void deposit(@NotNull OfflinePlayer player, @NotNull Inventory inventory) {
-        if (!items.containsKey(player))
-            items.put(player, new HashMap<>());
-        addInventoryToItemMap(inventory, items.get(player));
-        refreshScoreboard(player);
+        final Map<Material, Integer> itemsToDeposit = new HashMap<>();
+        for (ItemStack itemStack : inventory.getContents()) {
+            if (itemStack != null && config().awardPointsFor(itemStack))  {
+                itemsToDeposit.put(
+                        itemStack.getType(),
+                        itemsToDeposit.getOrDefault(itemStack.getType(), 0) + itemStack.getAmount()
+                );
+            }
+        }
+        for (Map.Entry<Material, Integer> entry : itemsToDeposit.entrySet()) {
+            final int amount = Math.min(numberOfItemsLeftToMax(player, entry.getKey()), entry.getValue());
+            if (amount == 0) continue;
+            inventory.remove(new ItemStack(entry.getKey(), amount));
+            deposit(player, entry.getKey(), amount);
+        }
+    }
+
+    public boolean isMaxed(@NotNull OfflinePlayer player, @NotNull Material itemType) {
+        return config().pointsForAmount(getAmount(player, itemType)) >= config().maxPointsPerItemType;
+    }
+
+    public int numberOfItemsLeftToMax(@NotNull OfflinePlayer player, @NotNull Material itemType) {
+        return config().maxItemsAwardedPoints - getAmount(player, itemType);
     }
 
     public void reset() {

@@ -69,9 +69,9 @@ public final class ItemRacePlugin extends JavaPlugin {
                 configFile.get("denylist").get("treat_as_allowlist").asBoolean()
         );
 
-        pointsHandler = switch (config.pointsAwardMode()) {
+        pointsHandler = switch (config.pointsAwardMode) {
             case AUTO_DEPOSIT -> new AutoDepositor(this);
-            case DEPOSIT_COMMAND, DEPOSIT_GUI -> new DepositedItems(this);
+            case DEPOSIT_COMMAND, DEPOSIT_GUI -> new DepositedItems(this, true);
             case MAX_INVENTORY -> new MaxInventoryPointsHandler(this);
             case INVENTORY -> new InventoryPointsHandler(this);
             case ENDER_CHEST -> new EnderChestPointsHandler(this);
@@ -85,17 +85,17 @@ public final class ItemRacePlugin extends JavaPlugin {
         inventoryManager.init();
         // Listen for interactions with the deposit GUI
         if (pointsHandler instanceof DepositedItems depositedItems) {
-            getServer().getPluginManager().registerEvents(new DepositGUIListener(depositedItems), this);
+            getServer().getPluginManager().registerEvents(new DepositGUIListener(config, depositedItems), this);
         }
         // Load commands
         final PaperCommandManager commandManager = new PaperCommandManager(this);
         commandManager.getCommandCompletions().registerCompletion(
                 "itemType",
-                c -> Arrays.stream(c.getPlayer().getInventory().getStorageContents())
+                c -> Arrays.stream(c.getPlayer().getInventory().getContents())
                         .filter(Objects::nonNull)
                         .map(ItemStack::getType)
                         .distinct()
-                        .filter(pointsHandler::canAwardPointsFor)
+                        .filter(config::awardPointsFor)
                         .map(Material::name)
                         .toList()
         );
@@ -107,8 +107,7 @@ public final class ItemRacePlugin extends JavaPlugin {
                 throw new InvalidCommandArgument(
                         // There might be a way to let the client handle this, but I can't figure it out
                         serializeTranslatable(
-                                Component.translatable(
-                                        "command-context.itemtype.invalid",
+                                Component.translatable("command-context.itemtype.invalid",
                                         Component.text(name)
                                 ),
                                 c.getPlayer().locale()

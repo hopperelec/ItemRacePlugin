@@ -48,8 +48,7 @@ public class ItemRaceCommand extends BaseCommand {
         } else {
             depositedItems.reset(player);
             if (player.getName() != null) {
-                sender.sendMessage(Component.translatable(
-                        "command.reset.player",
+                sender.sendMessage(Component.translatable("command.reset.player",
                         Component.text(player.getName())
                 ));
             }
@@ -61,11 +60,20 @@ public class ItemRaceCommand extends BaseCommand {
             player.sendMessage(Component.translatable("command.deposit.disabled"));
             return;
         }
-        // Check if the given material can be deposited
-        if (!depositedItems.canAwardPointsFor(material)) {
+        // Check if the player has already been awarded the maximum number of points for the given material
+        if (depositedItems.isMaxed(player, material)) {
             player.sendMessage(
-                    Component.translatable(
-                            "command.deposit.itemtype.denied",
+                    Component.translatable("command.deposit.full",
+                            Component.text(plugin.config.maxPointsPerItemType),
+                            Component.translatable(material.translationKey())
+                    )
+            );
+            return;
+        }
+        // Check if the given material can be deposited
+        if (!plugin.config.awardPointsFor(material)) {
+            player.sendMessage(
+                    Component.translatable("command.deposit.itemtype.denied",
                             Component.translatable(material)
                     )
             );
@@ -73,14 +81,19 @@ public class ItemRaceCommand extends BaseCommand {
         }
         // Remove and count all items of that type in their inventory
         int amountInt = 0;
+        int numberOfItemsLeftToMax = depositedItems.numberOfItemsLeftToMax(player, material);
         for (ItemStack item : player.getInventory().all(material).values()) {
-            if (!plugin.config.allowDamagedTools() && isDamaged(item)) continue;
+            if (!plugin.config.allowDamagedTools && isDamaged(item)) continue;
+            if (item.getAmount() > numberOfItemsLeftToMax) {
+                amountInt += numberOfItemsLeftToMax;
+                item.setAmount(item.getAmount() - numberOfItemsLeftToMax);
+                break;
+            }
             amountInt += item.getAmount();
             item.setAmount(0);
         }
         if (amountInt == 0) {
-            player.sendMessage(Component.translatable(
-                    "command.deposit.all.none",
+            player.sendMessage(Component.translatable("command.deposit.all.none",
                     Component.translatable(material.translationKey())
             ));
             return;
@@ -88,8 +101,7 @@ public class ItemRaceCommand extends BaseCommand {
         // Items have been successfully taken from their inventory
         depositedItems.deposit(player, material, amountInt);
         player.sendMessage(
-                Component.translatable(
-                        "command.deposit.all.success",
+                Component.translatable("command.deposit.all.success",
                         Component.text(amountInt),
                         Component.translatable(material.translationKey())
                 )
@@ -97,25 +109,18 @@ public class ItemRaceCommand extends BaseCommand {
     }
     
     protected void onDepositInventory(@NotNull Player player) {
-        if (!(plugin.pointsHandler instanceof DepositedItems depositedItems)) {
-            player.sendMessage(Component.translatable("command.deposit.disabled"));
-            return;
-        }
-        
-        for (ItemStack item : player.getInventory().getStorageContents()) {
-            if (item == null || !depositedItems.canAwardPointsFor(item)) continue;
-            depositedItems.deposit(player, item.getType(), item.getAmount());
-            item.setAmount(0);
-        }
-        player.sendMessage(Component.translatable("command.deposit.inventory.success"));
+        if (plugin.pointsHandler instanceof DepositedItems depositedItems) {
+            depositedItems.deposit(player, player.getInventory());
+            player.sendMessage(Component.translatable("command.deposit.inventory.success"));
+        } else player.sendMessage(Component.translatable("command.deposit.disabled"));
     }
     
     private int removeItems(@NotNull Player player, @NotNull Material material, int amount) {
         int amountRemoved = 0;
         int amountToRemove = amount;
-        for (ItemStack item : player.getInventory().getStorageContents()) {
+        for (ItemStack item : player.getInventory().getContents()) {
             if (item == null || item.getType() != material) continue;
-            if (!plugin.config.allowDamagedTools() && isDamaged(item)) continue;
+            if (!plugin.config.allowDamagedTools && isDamaged(item)) continue;
             if (item.getAmount() < amountToRemove) {
                 amountRemoved += item.getAmount();
                 amountToRemove -= item.getAmount();
@@ -134,29 +139,40 @@ public class ItemRaceCommand extends BaseCommand {
             player.sendMessage(Component.translatable("command.deposit.disabled"));
             return;
         }
+        // Check if the player has already been awarded the maximum number of points for the given material
+        if (depositedItems.isMaxed(player, material)) {
+            player.sendMessage(
+                    Component.translatable("command.deposit.full",
+                            Component.text(plugin.config.maxPointsPerItemType),
+                            Component.translatable(material.translationKey())
+                    )
+            );
+            return;
+        }
         // Check if the amount is valid
         if (amount <= 0) {
             player.sendMessage(Component.translatable("command.deposit.amount.zero"));
             return;
         }
         // Check if the given material can be deposited
-        if (!depositedItems.canAwardPointsFor(material)) {
+        if (!plugin.config.awardPointsFor(material)) {
             player.sendMessage(
-                    Component.translatable(
-                            "command.deposit.itemtype.denied",
+                    Component.translatable("command.deposit.itemtype.denied",
                             Component.translatable(material)
                     )
             );
             return;
         }
+        // Clamp amount to the maximum number of items that can be awarded points
+        amount = Math.min(amount, depositedItems.numberOfItemsLeftToMax(player, material));
         // Remove items from inventory
         if (mainHand) {
-            player.getInventory().setItemInMainHand(null);
+            final ItemStack itemInMainHand = player.getInventory().getItemInMainHand();
+            itemInMainHand.setAmount(itemInMainHand.getAmount() - amount);
         } else {
             amount = removeItems(player, material, amount);
             if (amount == 0) {
-                player.sendMessage(Component.translatable(
-                        "command.deposit.amount.insufficient",
+                player.sendMessage(Component.translatable("command.deposit.amount.insufficient",
                         Component.text(amount),
                         Component.text(material.name())
                 ));
@@ -188,13 +204,13 @@ public class ItemRaceCommand extends BaseCommand {
             }
             onDepositInventory(player);
             
-        } else if (plugin.config.pointsAwardMode() == PointsAwardMode.DEPOSIT_GUI && amountStr == null) {
+        } else if (plugin.config.pointsAwardMode == PointsAwardMode.DEPOSIT_GUI && amountStr == null) {
             plugin.openDepositGUI(player);
             
         } else {
             final Material material;
             if (itemType == null) {
-                if (!plugin.config.allowDamagedTools() && isDamaged(player.getInventory().getItemInMainHand())) {
+                if (!plugin.config.allowDamagedTools && isDamaged(player.getInventory().getItemInMainHand())) {
                     player.sendMessage(Component.translatable("command.deposit.specific.damaged"));
                     return;
                 }
@@ -210,8 +226,7 @@ public class ItemRaceCommand extends BaseCommand {
                 try {
                     amountInt = Integer.parseInt(amountStr);
                 } catch (NumberFormatException e) {
-                    player.sendMessage(Component.translatable(
-                            "command.deposit.amount.invalid",
+                    player.sendMessage(Component.translatable("command.deposit.amount.invalid",
                             Component.text(amountStr))
                     );
                     return;
@@ -271,8 +286,7 @@ public class ItemRaceCommand extends BaseCommand {
             }
             if (ownPosition > 0) {
                 sender.sendMessage("");
-                sender.sendMessage(Component.translatable(
-                        "command.leaderboard.position",
+                sender.sendMessage(Component.translatable("command.leaderboard.position",
                         Component.text(ownPosition)
                 ));
             }

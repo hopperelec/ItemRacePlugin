@@ -54,8 +54,7 @@ public class ItemRaceInventoryProvider implements InventoryProvider {
                         final ItemMeta itemMeta = itemStack.getItemMeta();
                         itemMeta.itemName(
                                 GlobalTranslator.render(
-                                        Component.translatable(
-                                                "inventory.itemname",
+                                        Component.translatable("inventory.itemname",
                                                 Component.translatable(itemStack.getType().translationKey()),
                                                 Component.text(entry.getValue())
                                         ), viewer.locale()
