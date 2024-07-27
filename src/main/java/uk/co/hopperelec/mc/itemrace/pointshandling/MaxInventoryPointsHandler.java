@@ -9,6 +9,7 @@ import uk.co.hopperelec.mc.itemrace.ItemRacePlugin;
 import uk.co.hopperelec.mc.itemrace.listeners.PlayerInventoryListener;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 public class MaxInventoryPointsHandler extends DepositedItems implements PlayerInventoryListener {
     public MaxInventoryPointsHandler(ItemRacePlugin plugin) {
@@ -23,7 +24,8 @@ public class MaxInventoryPointsHandler extends DepositedItems implements PlayerI
 
     public void countItems(@NotNull Player player, @NotNull Material material) {
         final int count = Arrays.stream(player.getInventory().getContents())
-                .filter(item -> item != null && item.getType() == material)
+                .filter(plugin.config::awardPointsFor)
+                .filter(Objects::nonNull) // Has no effect due to awardPointsFor filter
                 .map(ItemStack::getAmount)
                 .reduce(0, Integer::sum);
         if (getAmount(player, material) < count)

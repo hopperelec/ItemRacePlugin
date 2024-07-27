@@ -113,11 +113,30 @@ public class DepositedItems extends PointsHandler {
         }
     }
 
+    public void deposit(@NotNull OfflinePlayer player, @NotNull Material itemType, int amount) {
+        if (items.containsKey(player))
+            amount += items.get(player).getOrDefault(itemType, 0);
+        setAmount(player, itemType, amount);
+    }
+
     public void tryDeposit(@NotNull Player player, @NotNull Material itemType, int amount) {
-        if (config().awardPointsFor(itemType)) deposit(player, itemType, amount);
+        try { deposit(player, itemType, amount); }
+        catch (IllegalArgumentException ignored) {}
     }
     public void tryDeposit(@NotNull Player player, @NotNull ItemStack itemStack) {
-        if (config().awardPointsFor(itemStack)) deposit(player, itemStack.getType(), itemStack.getAmount());
+        try { deposit(player, itemStack.getType(), itemStack.getAmount()); }
+        catch (IllegalArgumentException ignored) {}
+    }
+    // Will leave any items that couldn't be deposited in the inventory
+    public void tryDeposit(@NotNull OfflinePlayer player, @NotNull Inventory inventory) {
+        for (ItemStack itemStack : inventory.getContents()) {
+            if (itemStack != null && config().awardPointsFor(itemStack))  {
+                final int amount = Math.min(itemStack.getAmount(), numberOfItemsLeftToMax(player, itemStack.getType()));
+                if (amount == 0) continue;
+                deposit(player, itemStack.getType(), amount);
+                itemStack.setAmount(itemStack.getAmount() - amount);
+            }
+        }
     }
     public void clearAndTryDeposit(@NotNull Player player, @NotNull ItemStack itemStack) {
         tryDeposit(player, itemStack);
@@ -128,46 +147,23 @@ public class DepositedItems extends PointsHandler {
         return items.containsKey(player) ? items.get(player).getOrDefault(itemType, 0) : 0;
     }
 
-    protected void refreshScoreboard(@NotNull OfflinePlayer player) {
-        scoreboardObjective.getScore(player).setScore(calculateScore(player));
-    }
-
     public void setAmount(@NotNull OfflinePlayer player, @NotNull Material itemType, int amount) {
         if (amount < 0)
             throw new IllegalArgumentException("Amount cannot be negative");
-        if (throwIfOverDeposit && amount > config().maxItemsAwardedPoints)
-            throw new IllegalArgumentException("Amount exceeds maxItemsAwardedPoints");
         if (!config().awardPointsFor(itemType))
             throw new IllegalArgumentException("Tried to set the amount of an item type which is not awarded points");
         if (!items.containsKey(player))
             items.put(player, new HashMap<>());
         else if (amount == 0)
             items.get(player).remove(itemType);
-        items.get(player).put(itemType, amount);
+        items.get(player).put(itemType, Math.min(amount, config().maxItemsAwardedPoints));
         refreshScoreboard(player);
+        if (throwIfOverDeposit && amount > config().maxItemsAwardedPoints)
+            throw new IllegalArgumentException("Amount exceeds maxItemsAwardedPoints");
     }
 
-    public void deposit(@NotNull OfflinePlayer player, @NotNull Material itemType, int amount) {
-        if (items.containsKey(player))
-            amount += items.get(player).getOrDefault(itemType, 0);
-        setAmount(player, itemType, amount);
-    }
-    public void deposit(@NotNull OfflinePlayer player, @NotNull Inventory inventory) {
-        final Map<Material, Integer> itemsToDeposit = new HashMap<>();
-        for (ItemStack itemStack : inventory.getContents()) {
-            if (itemStack != null && config().awardPointsFor(itemStack))  {
-                itemsToDeposit.put(
-                        itemStack.getType(),
-                        itemsToDeposit.getOrDefault(itemStack.getType(), 0) + itemStack.getAmount()
-                );
-            }
-        }
-        for (Map.Entry<Material, Integer> entry : itemsToDeposit.entrySet()) {
-            final int amount = Math.min(numberOfItemsLeftToMax(player, entry.getKey()), entry.getValue());
-            if (amount == 0) continue;
-            inventory.remove(new ItemStack(entry.getKey(), amount));
-            deposit(player, entry.getKey(), amount);
-        }
+    protected void refreshScoreboard(@NotNull OfflinePlayer player) {
+        scoreboardObjective.getScore(player).setScore(calculateScore(player));
     }
 
     public boolean isMaxed(@NotNull OfflinePlayer player, @NotNull Material itemType) {

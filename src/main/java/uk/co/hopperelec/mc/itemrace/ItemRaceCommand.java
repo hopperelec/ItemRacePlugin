@@ -84,13 +84,14 @@ public class ItemRaceCommand extends BaseCommand {
         int numberOfItemsLeftToMax = depositedItems.numberOfItemsLeftToMax(player, material);
         for (ItemStack item : player.getInventory().all(material).values()) {
             if (!plugin.config.allowDamagedTools && isDamaged(item)) continue;
-            if (item.getAmount() > numberOfItemsLeftToMax) {
+            final int amount = item.getAmount();
+            item.setAmount(amount - numberOfItemsLeftToMax);
+            if (amount > numberOfItemsLeftToMax) {
                 amountInt += numberOfItemsLeftToMax;
-                item.setAmount(item.getAmount() - numberOfItemsLeftToMax);
                 break;
             }
-            amountInt += item.getAmount();
-            item.setAmount(0);
+            amountInt += amount;
+            numberOfItemsLeftToMax -= item.getAmount();
         }
         if (amountInt == 0) {
             player.sendMessage(Component.translatable("command.deposit.all.none",
@@ -110,28 +111,24 @@ public class ItemRaceCommand extends BaseCommand {
     
     protected void onDepositInventory(@NotNull Player player) {
         if (plugin.pointsHandler instanceof DepositedItems depositedItems) {
-            depositedItems.deposit(player, player.getInventory());
+            depositedItems.tryDeposit(player, player.getInventory());
             player.sendMessage(Component.translatable("command.deposit.inventory.success"));
         } else player.sendMessage(Component.translatable("command.deposit.disabled"));
     }
-    
+
+    // Returns the number of items which couldn't be removed
     private int removeItems(@NotNull Player player, @NotNull Material material, int amount) {
-        int amountRemoved = 0;
-        int amountToRemove = amount;
-        for (ItemStack item : player.getInventory().getContents()) {
-            if (item == null || item.getType() != material) continue;
-            if (!plugin.config.allowDamagedTools && isDamaged(item)) continue;
-            if (item.getAmount() < amountToRemove) {
-                amountRemoved += item.getAmount();
-                amountToRemove -= item.getAmount();
-                item.setAmount(0);
-            } else {
-                amountRemoved = amount;
-                item.setAmount(item.getAmount() - amountToRemove);
-                break;
+        for (ItemStack itemStack : player.getInventory().getContents()) {
+            if (itemStack == null || itemStack.getType() != material) continue;
+            if (!plugin.config.allowDamagedTools && isDamaged(itemStack)) continue;
+            if (itemStack.getAmount() >= amount) {
+                itemStack.setAmount(itemStack.getAmount() - amount);
+                return 0;
             }
+            amount -= itemStack.getAmount();
+            itemStack.setAmount(0);
         }
-        return amountRemoved;
+        return amount;
     }
     
     protected void onDeposit(@NotNull Player player, int amount, @NotNull Material material, boolean mainHand) {
@@ -170,14 +167,15 @@ public class ItemRaceCommand extends BaseCommand {
             final ItemStack itemInMainHand = player.getInventory().getItemInMainHand();
             itemInMainHand.setAmount(itemInMainHand.getAmount() - amount);
         } else {
-            amount = removeItems(player, material, amount);
-            if (amount == 0) {
+            final int amountRemaining = removeItems(player, material, amount);
+            if (amountRemaining == amount) {
                 player.sendMessage(Component.translatable("command.deposit.amount.insufficient",
                         Component.text(amount),
                         Component.text(material.name())
                 ));
                 return;
             }
+            amount -= amountRemaining;
         }
         // Items have been successfully taken from their inventory
         depositedItems.deposit(player, material, amount);

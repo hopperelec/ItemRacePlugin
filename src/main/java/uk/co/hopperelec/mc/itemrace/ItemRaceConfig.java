@@ -82,7 +82,6 @@ public class ItemRaceConfig {
                 Arrays.stream(denylistItems).anyMatch(itemType -> itemType.is(material)) :
                 Arrays.stream(denylistItems).noneMatch(itemType -> itemType.is(material));
     }
-
     public boolean awardPointsFor(@Nullable ItemStack itemStack) {
         return itemStack != null && (allowDamagedTools || !isDamaged(itemStack)) && awardPointsFor(itemStack.getType());
     }

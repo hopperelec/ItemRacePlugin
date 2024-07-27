@@ -44,7 +44,7 @@ public class DepositGUIListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onInventoryClose(@NotNull InventoryCloseEvent event) {
         if (!(event.getInventory().getHolder() instanceof DepositGUI)) return;
-        depositedItems.deposit((OfflinePlayer) event.getPlayer(), event.getInventory());
+        depositedItems.tryDeposit((OfflinePlayer) event.getPlayer(), event.getInventory());
         if (!event.getInventory().isEmpty()) {
             for (ItemStack item : event.getInventory().getContents()) {
                 if (item != null) event.getPlayer().getInventory().addItem(item);
