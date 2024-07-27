@@ -5,6 +5,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.ItemStack;
@@ -24,10 +25,19 @@ public class DepositGUIListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onInventoryClick(@NotNull InventoryClickEvent event) {
-        if (
-                event.getClickedInventory() != null &&
-                event.getClickedInventory().getHolder() instanceof DepositGUI &&
-                !config.awardPointsFor(event.getCursor())
+        if (event.getClickedInventory() == null) return;
+        if (event.getClickedInventory().getHolder() instanceof DepositGUI) {
+            final ItemStack itemBeingAdded = switch (event.getAction()) {
+                case PLACE_ALL, PLACE_SOME, PLACE_ONE, SWAP_WITH_CURSOR -> event.getCursor();
+                case HOTBAR_SWAP -> event.getWhoClicked().getInventory().getItem(event.getHotbarButton());
+                default -> null;
+            };
+            if (itemBeingAdded != null && !config.awardPointsFor(itemBeingAdded))
+                event.setCancelled(true);
+        } else if (
+                event.getInventory().getHolder() instanceof DepositGUI &&
+                event.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY &&
+                !config.awardPointsFor(event.getCurrentItem())
         ) event.setCancelled(true);
     }
 

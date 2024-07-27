@@ -78,14 +78,12 @@ public class ItemRaceConfig {
 
     public boolean awardPointsFor(@Nullable Material material) {
         if (material == null || material.isAir()) return false;
-        if (treatDenylistAsWhitelist)
-            return Arrays.stream(denylistItems).anyMatch(itemType -> itemType.is(material));
-        return Arrays.stream(denylistItems).noneMatch(itemType -> itemType.is(material));
+        return treatDenylistAsWhitelist ?
+                Arrays.stream(denylistItems).anyMatch(itemType -> itemType.is(material)) :
+                Arrays.stream(denylistItems).noneMatch(itemType -> itemType.is(material));
     }
 
     public boolean awardPointsFor(@Nullable ItemStack itemStack) {
-        if (itemStack == null) return false;
-        if (!allowDamagedTools && isDamaged(itemStack)) return false;
-        return awardPointsFor(itemStack.getType());
+        return itemStack != null && (allowDamagedTools || !isDamaged(itemStack)) && awardPointsFor(itemStack.getType());
     }
 }
