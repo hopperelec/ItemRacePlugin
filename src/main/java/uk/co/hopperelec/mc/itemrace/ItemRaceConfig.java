@@ -44,6 +44,7 @@ public class ItemRaceConfig {
             boolean treatDenylistAsWhitelist
     ) {
         this.pointsAwardMode = pointsAwardMode;
+        if (itemsPerPointGrowthRate < 1) throw new IllegalArgumentException("itemsPerPointGrowthRate must be at least 1");
         this.itemsPerPointGrowthRate = itemsPerPointGrowthRate;
         this.awardPointForFirstItem = awardPointForFirstItem;
         this.maxPointsPerItemType = maxPointsPerItemType;
@@ -56,21 +57,22 @@ public class ItemRaceConfig {
         this.treatDenylistAsWhitelist = treatDenylistAsWhitelist;
 
         maxItemsAwardedPoints =
-                maxPointsPerItemType < 0 ?
-                        Integer.MAX_VALUE :
-                        Double.valueOf(
-                                Math.pow(
-                                        itemsPerPointGrowthRate,
-                                        maxPointsPerItemType + (awardPointForFirstItem ? 1 : 0)
-                                )
-                        ).intValue();
+                maxPointsPerItemType < 0 ? Integer.MAX_VALUE : (
+                        maxPointsPerItemType == 0 ? 0 :
+                                Double.valueOf(
+                                        Math.pow(
+                                                itemsPerPointGrowthRate,
+                                                maxPointsPerItemType - (awardPointForFirstItem ? 1 : 0)
+                                        )
+                                ).intValue()
+                );
     }
 
     public int pointsForAmount(int amount) {
         if (amount <= 0) return 0;
         int score = floorLog(itemsPerPointGrowthRate, amount);
-        if (maxPointsPerItemType > 0) score = Math.min(score, maxPointsPerItemType);
-        if (awardPointForFirstItem && itemsPerPointGrowthRate > 1) return score + 1;
+        if (awardPointForFirstItem && itemsPerPointGrowthRate > 1) score += 1;
+        if (maxPointsPerItemType >= 0) score = Math.min(score, maxPointsPerItemType);
         return score;
     }
 

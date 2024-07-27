@@ -31,7 +31,6 @@ public abstract class PointsHandler {
     public void onEnable() {}
     public void onDisable() {}
 
-
     public int calculateScore(@NotNull OfflinePlayer player) {
         return getItems(player).values().stream()
                 .map(config()::pointsForAmount)

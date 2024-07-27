@@ -171,7 +171,7 @@ public class DepositedItems extends PointsHandler {
     }
 
     public boolean isMaxed(@NotNull OfflinePlayer player, @NotNull Material itemType) {
-        return config().pointsForAmount(getAmount(player, itemType)) >= config().maxPointsPerItemType;
+        return getAmount(player, itemType) >= config().maxItemsAwardedPoints;
     }
 
     public int numberOfItemsLeftToMax(@NotNull OfflinePlayer player, @NotNull Material itemType) {
