@@ -89,12 +89,7 @@ public class ItemRaceInventoryGUI implements InventoryProvider {
                                         ),
                                         viewer.locale()
                                 ));
-
-                                // For some reason this doesn't show the correct skin (looks like a gorilla for me?),
-                                // but the skin shown also isn't a Steve or Alex skin, so I'm not sure what could be happening
-                                // TODO: Fix incorrect skins shown in main menu of inventory GUI
                                 itemMeta.setOwningPlayer(player);
-
                                 itemStack.setItemMeta(itemMeta);
                                 return ClickableItem.of(itemStack, e -> setPlayer(player));
                             })
