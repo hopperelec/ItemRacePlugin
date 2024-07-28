@@ -3,7 +3,6 @@ package uk.co.hopperelec.mc.itemrace;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.CommandHelp;
 import co.aikar.commands.annotation.*;
-import fr.minuskube.inv.SmartInventory;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -19,7 +18,6 @@ import java.util.Objects;
 
 import static org.bukkit.Bukkit.getScoreboardManager;
 import static uk.co.hopperelec.mc.itemrace.ItemRaceUtils.isDamaged;
-import static uk.co.hopperelec.mc.itemrace.ItemRaceUtils.serializeTranslatable;
 
 @CommandAlias("itemrace")
 public class ItemRaceCommand extends BaseCommand {
@@ -62,21 +60,17 @@ public class ItemRaceCommand extends BaseCommand {
         }
         // Check if the player has already been awarded the maximum number of points for the given material
         if (depositedItems.isMaxed(player, material)) {
-            player.sendMessage(
-                    Component.translatable("command.deposit.full",
-                            Component.text(plugin.config.maxPointsPerItemType),
-                            Component.translatable(material.translationKey())
-                    )
-            );
+            player.sendMessage(Component.translatable("command.deposit.full",
+                    Component.text(plugin.config.maxPointsPerItemType),
+                    Component.translatable(material.translationKey())
+            ));
             return;
         }
         // Check if the given material can be deposited
         if (!plugin.config.awardPointsFor(material)) {
-            player.sendMessage(
-                    Component.translatable("command.deposit.itemtype.denied",
-                            Component.translatable(material)
-                    )
-            );
+            player.sendMessage(Component.translatable("command.deposit.itemtype.denied",
+                    Component.translatable(material)
+            ));
             return;
         }
         // Remove and count all items of that type in their inventory
@@ -101,12 +95,10 @@ public class ItemRaceCommand extends BaseCommand {
         }
         // Items have been successfully taken from their inventory
         depositedItems.deposit(player, material, amountInt);
-        player.sendMessage(
-                Component.translatable("command.deposit.all.success",
-                        Component.text(amountInt),
-                        Component.translatable(material.translationKey())
-                )
-        );
+        player.sendMessage(Component.translatable("command.deposit.all.success",
+                Component.text(amountInt),
+                Component.translatable(material.translationKey())
+        ));
     }
     
     protected void onDepositInventory(@NotNull Player player) {
@@ -138,12 +130,10 @@ public class ItemRaceCommand extends BaseCommand {
         }
         // Check if the player has already been awarded the maximum number of points for the given material
         if (depositedItems.isMaxed(player, material)) {
-            player.sendMessage(
-                    Component.translatable("command.deposit.full",
-                            Component.text(plugin.config.maxPointsPerItemType),
-                            Component.translatable(material.translationKey())
-                    )
-            );
+            player.sendMessage(Component.translatable("command.deposit.full",
+                    Component.text(plugin.config.maxPointsPerItemType),
+                    Component.translatable(material.translationKey())
+            ));
             return;
         }
         // Check if the amount is valid
@@ -153,11 +143,9 @@ public class ItemRaceCommand extends BaseCommand {
         }
         // Check if the given material can be deposited
         if (!plugin.config.awardPointsFor(material)) {
-            player.sendMessage(
-                    Component.translatable("command.deposit.itemtype.denied",
-                            Component.translatable(material)
-                    )
-            );
+            player.sendMessage(Component.translatable("command.deposit.itemtype.denied",
+                    Component.translatable(material)
+            ));
             return;
         }
         // Clamp amount to the maximum number of items that can be awarded points
@@ -241,23 +229,11 @@ public class ItemRaceCommand extends BaseCommand {
     public void onInventory(@NotNull Player sender, @Optional @Name("player") OfflinePlayer player) {
         if (player == null) player = sender;
         final Component playerNameComponent = Component.text(Objects.requireNonNull(player.getName()));
-        if (player != sender && !sender.hasPermission("itemrace.inventory")) {
+        if (player == sender && sender.hasPermission("itemrace.inventory"))
+            new ItemRaceInventoryGUI(plugin.inventoryManager, plugin.pointsHandler, sender, player);
+        else
             sender.sendMessage(Component.translatable("command.inventory.others.denied", playerNameComponent));
-            return;
-        }
-        final ItemRaceInventoryProvider inventoryProvider = new ItemRaceInventoryProvider(plugin.pointsHandler, player);
-        final SmartInventory inventory = SmartInventory.builder()
-                .provider(inventoryProvider)
-                .manager(plugin.inventoryManager)
-                .title(
-                        // SmartInventories doesn't support Adventure components
-                        serializeTranslatable(
-                                Component.translatable("inventory.title", playerNameComponent),
-                                sender.locale()
-                        )
-                ).build();
-        inventoryProvider.setInventory(inventory);
-        inventory.open(sender);
+
     }
 
     @Subcommand("leaderboard|lb")
