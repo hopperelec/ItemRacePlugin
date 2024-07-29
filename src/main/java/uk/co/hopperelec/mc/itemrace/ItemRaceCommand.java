@@ -229,7 +229,7 @@ public class ItemRaceCommand extends BaseCommand {
     public void onInventory(@NotNull Player sender, @Optional @Name("player") OfflinePlayer player) {
         if (player == null) player = sender;
         final Component playerNameComponent = Component.text(Objects.requireNonNull(player.getName()));
-        if (player == sender && sender.hasPermission("itemrace.inventory"))
+        if (player == sender || sender.hasPermission("itemrace.inventory"))
             new ItemRaceInventoryGUI(plugin.inventoryManager, plugin.pointsHandler, sender, player);
         else
             sender.sendMessage(Component.translatable("command.inventory.others.denied", playerNameComponent));

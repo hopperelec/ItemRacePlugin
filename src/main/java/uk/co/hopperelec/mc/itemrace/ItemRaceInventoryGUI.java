@@ -77,6 +77,11 @@ public class ItemRaceInventoryGUI implements InventoryProvider {
     public void init(@NotNull Player viewer, @NotNull InventoryContents contents) {
         final Pagination pagination = contents.pagination();
         pagination.setItemsPerPage(45);
+
+        final boolean canViewOtherInventories = viewer.hasPermission("itemrace.inventory");
+        if (!canViewOtherInventories && player != viewer)
+            throw new IllegalStateException("Player " + viewer.getName() + " does not have permission to view other player's inventories");
+
         if (player == null) {
             // Main menu
             pagination.setItems(
@@ -98,7 +103,6 @@ public class ItemRaceInventoryGUI implements InventoryProvider {
                             })
                             .toArray(ClickableItem[]::new)
             );
-
         } else {
             // Inventory menu
             pagination.setItems(
@@ -120,7 +124,8 @@ public class ItemRaceInventoryGUI implements InventoryProvider {
                             })
                             .toArray(ClickableItem[]::new)
             );
-            contents.set(5, 0, createArrow("inventorygui.button.mainmenu", e -> setPlayer(null)));
+            if (canViewOtherInventories)
+                contents.set(5, 0, createArrow("inventorygui.button.mainmenu", e -> setPlayer(null)));
         }
 
         pagination.addToIterator(contents.newIterator(SlotIterator.Type.HORIZONTAL, 0, 0));
