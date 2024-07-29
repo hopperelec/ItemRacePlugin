@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public abstract class PointsHandler {
-    protected ItemRacePlugin plugin;
+    protected final ItemRacePlugin plugin;
 
     public PointsHandler(ItemRacePlugin plugin) {
         this.plugin = plugin;

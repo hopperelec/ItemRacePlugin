@@ -27,7 +27,7 @@ import java.util.UUID;
 public class DepositedItems extends PointsHandler {
     public Scoreboard scoreboard;
     public Objective scoreboardObjective;
-    private final Map<OfflinePlayer, Map<Material, Integer>> items = new HashMap<>();
+    private final Map<UUID, Map<Material, Integer>> items = new HashMap<>();
     private final File FILE = new File(plugin.getDataFolder(), "deposited_items.yml");
     public boolean throwIfOverDeposit = false;
     
@@ -64,14 +64,15 @@ public class DepositedItems extends PointsHandler {
                 break persistItems;
             }
             fileTree.fields().forEachRemaining(inventory -> {
-                final OfflinePlayer player = plugin.getServer().getOfflinePlayer(UUID.fromString(inventory.getKey()));
+                final UUID uuid = UUID.fromString(inventory.getKey());
                 inventory.getValue().fields().forEachRemaining(
                         depositedItem -> setAmount(
-                                player,
+                                uuid,
                                 Material.valueOf(depositedItem.getKey()),
                                 Math.min(depositedItem.getValue().asInt(), config().maxItemsAwardedPoints)
                         )
                 );
+                refreshScoreboard(plugin.getServer().getOfflinePlayer(uuid));
             });
 
             // Start auto-saving deposited items
@@ -91,12 +92,12 @@ public class DepositedItems extends PointsHandler {
 
     @Override
     public Collection<? extends OfflinePlayer> getEligiblePlayers() {
-        return items.keySet();
+        return items.keySet().stream().map(plugin.getServer()::getOfflinePlayer).toList();
     }
 
     @Override
     public @NotNull Map<Material, Integer> getItems(@NotNull OfflinePlayer player) {
-        return items.getOrDefault(player, new HashMap<>());
+        return items.getOrDefault(player.getUniqueId(), new HashMap<>());
     }
 
     public void save() {
@@ -104,7 +105,7 @@ public class DepositedItems extends PointsHandler {
         items.forEach((player, items) -> {
             final Map<String, Integer> serializedItems = new HashMap<>();
             items.forEach((material, amount) -> serializedItems.put(material.name(), amount));
-            serializedDepositedItems.put(player.getUniqueId(), serializedItems);
+            serializedDepositedItems.put(player, serializedItems);
         });
         try {
             new YAMLMapper().writeValue(FILE, serializedDepositedItems);
@@ -114,16 +115,17 @@ public class DepositedItems extends PointsHandler {
     }
 
     public void deposit(@NotNull OfflinePlayer player, @NotNull Material itemType, int amount) {
-        if (items.containsKey(player))
-            amount += items.get(player).getOrDefault(itemType, 0);
+        final UUID uuid = player.getUniqueId();
+        if (items.containsKey(uuid))
+            amount += items.get(uuid).getOrDefault(itemType, 0);
         setAmount(player, itemType, amount);
     }
 
-    public void tryDeposit(@NotNull Player player, @NotNull Material itemType, int amount) {
+    public void tryDeposit(@NotNull OfflinePlayer player, @NotNull Material itemType, int amount) {
         try { deposit(player, itemType, amount); }
         catch (IllegalArgumentException ignored) {}
     }
-    public void tryDeposit(@NotNull Player player, @NotNull ItemStack itemStack) {
+    public void tryDeposit(@NotNull OfflinePlayer player, @NotNull ItemStack itemStack) {
         try { deposit(player, itemStack.getType(), itemStack.getAmount()); }
         catch (IllegalArgumentException ignored) {}
     }
@@ -144,22 +146,26 @@ public class DepositedItems extends PointsHandler {
     }
 
     public int getAmount(@NotNull OfflinePlayer player, @NotNull Material itemType) {
-        return items.containsKey(player) ? items.get(player).getOrDefault(itemType, 0) : 0;
+        final UUID uuid = player.getUniqueId();
+        return items.containsKey(uuid) ? items.get(uuid).getOrDefault(itemType, 0) : 0;
     }
 
-    public void setAmount(@NotNull OfflinePlayer player, @NotNull Material itemType, int amount) {
+    private void setAmount(@NotNull UUID uuid, @NotNull Material itemType, int amount) {
         if (amount < 0)
             throw new IllegalArgumentException("Amount cannot be negative");
         if (!config().awardPointsFor(itemType))
             throw new IllegalArgumentException("Tried to set the amount of an item type which is not awarded points");
-        if (!items.containsKey(player))
-            items.put(player, new HashMap<>());
+        if (!items.containsKey(uuid))
+            items.put(uuid, new HashMap<>());
         else if (amount == 0)
-            items.get(player).remove(itemType);
-        items.get(player).put(itemType, Math.min(amount, config().maxItemsAwardedPoints));
-        refreshScoreboard(player);
+            items.get(uuid).remove(itemType);
+        items.get(uuid).put(itemType, Math.min(amount, config().maxItemsAwardedPoints));
         if (throwIfOverDeposit && amount > config().maxItemsAwardedPoints)
             throw new IllegalArgumentException("Amount exceeds maxItemsAwardedPoints");
+    }
+    public void setAmount(@NotNull OfflinePlayer player, @NotNull Material itemType, int amount) {
+        setAmount(player.getUniqueId(), itemType, amount);
+        refreshScoreboard(player);
     }
 
     protected void refreshScoreboard(@NotNull OfflinePlayer player) {
@@ -180,7 +186,7 @@ public class DepositedItems extends PointsHandler {
     }
 
     public void reset(@NotNull OfflinePlayer player) {
-        items.remove(player);
+        items.remove(player.getUniqueId());
         scoreboard.resetScores(player);
     }
 }
