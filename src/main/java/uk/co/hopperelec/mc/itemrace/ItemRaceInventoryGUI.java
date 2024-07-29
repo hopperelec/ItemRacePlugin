@@ -1,5 +1,6 @@
 package uk.co.hopperelec.mc.itemrace;
 
+import com.destroystokyo.paper.profile.PlayerProfile;
 import fr.minuskube.inv.ClickableItem;
 import fr.minuskube.inv.InventoryManager;
 import fr.minuskube.inv.SmartInventory;
@@ -83,13 +84,15 @@ public class ItemRaceInventoryGUI implements InventoryProvider {
                             .map(player -> {
                                 final ItemStack itemStack = new ItemStack(Material.PLAYER_HEAD);
                                 final SkullMeta itemMeta = (SkullMeta) itemStack.getItemMeta();
+                                final PlayerProfile playerProfile = player.getPlayerProfile();
+                                playerProfile.complete(); // Blocking call, TODO: complete profile async
                                 itemMeta.itemName(GlobalTranslator.render(
                                         Component.translatable("inventorygui.mainmenu.skull",
-                                            Component.text(Objects.requireNonNull(player.getName()))
+                                            Component.text(Objects.requireNonNull(playerProfile.getName()))
                                         ),
                                         viewer.locale()
                                 ));
-                                itemMeta.setOwningPlayer(player);
+                                itemMeta.setPlayerProfile(playerProfile);
                                 itemStack.setItemMeta(itemMeta);
                                 return ClickableItem.of(itemStack, e -> setPlayer(player));
                             })
