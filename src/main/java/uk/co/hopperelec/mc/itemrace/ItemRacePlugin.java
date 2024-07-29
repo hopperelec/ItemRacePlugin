@@ -62,6 +62,7 @@ public final class ItemRacePlugin extends JavaPlugin {
                     case "PLAYER_LIST" -> DisplaySlot.PLAYER_LIST;
                     default -> throw new IllegalStateException("scoreboard.display_slot must be one of SIDEBAR, BELOW_NAME or PLAYER_LIST");
                 },
+                configFile.get("inventory_gui").get("split_into_stacks").asBoolean(),
                 StreamSupport.stream(configFile.get("denylist").get("items").spliterator(), false)
                         .map(JsonNode::asText)
                         .map(ItemType::new)

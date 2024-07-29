@@ -26,6 +26,8 @@ public class ItemRaceConfig {
     // Scoreboard
     public final boolean defaultScoreboardState;
     public final @NotNull DisplaySlot scoreboardDisplaySlot;
+    // Inventory GUI
+    public final boolean splitItemsIntoStacks;
     // Denylist
     public final @NotNull ItemType @NotNull [] denylistItems;
     public final boolean treatDenylistAsWhitelist;
@@ -40,6 +42,7 @@ public class ItemRaceConfig {
             int autosaveFrequencyTicks,
             boolean defaultScoreboardState,
             @NotNull DisplaySlot scoreboardDisplaySlot,
+            boolean splitItemsIntoStacks,
             @NotNull ItemType @NotNull [] denylistItems,
             boolean treatDenylistAsWhitelist
     ) {
@@ -53,6 +56,7 @@ public class ItemRaceConfig {
         this.autosaveFrequencyTicks = autosaveFrequencyTicks;
         this.defaultScoreboardState = defaultScoreboardState;
         this.scoreboardDisplaySlot = scoreboardDisplaySlot;
+        this.splitItemsIntoStacks = splitItemsIntoStacks;
         this.denylistItems = denylistItems;
         this.treatDenylistAsWhitelist = treatDenylistAsWhitelist;
 

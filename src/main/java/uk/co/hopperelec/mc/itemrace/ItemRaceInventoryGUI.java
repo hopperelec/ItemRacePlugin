@@ -2,7 +2,6 @@ package uk.co.hopperelec.mc.itemrace;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import fr.minuskube.inv.ClickableItem;
-import fr.minuskube.inv.InventoryManager;
 import fr.minuskube.inv.SmartInventory;
 import fr.minuskube.inv.content.InventoryContents;
 import fr.minuskube.inv.content.InventoryProvider;
@@ -19,36 +18,29 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import uk.co.hopperelec.mc.itemrace.pointshandling.PointsHandler;
 
-import java.util.Comparator;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Consumer;
 
 import static uk.co.hopperelec.mc.itemrace.ItemRaceUtils.serializeTranslatable;
 
 public class ItemRaceInventoryGUI implements InventoryProvider {
-    private final InventoryManager inventoryManager;
-    private final PointsHandler pointsHandler;
+    private final @NotNull ItemRacePlugin plugin;
     public final @NotNull Player viewer;
     public @Nullable OfflinePlayer player;
     private SmartInventory inventory;
 
     public ItemRaceInventoryGUI(
-            @NotNull InventoryManager inventoryManager,
-            @NotNull PointsHandler pointsHandler,
+            @NotNull ItemRacePlugin plugin,
             @NotNull Player viewer,
             @NotNull OfflinePlayer player
     ) {
-        this.inventoryManager = inventoryManager;
-        this.pointsHandler = pointsHandler;
+        this.plugin = plugin;
         this.viewer = viewer;
         setPlayer(player);
     }
 
-    @NotNull
-    private ClickableItem createArrow(@NotNull String nameKey, @NotNull Consumer<InventoryClickEvent> action) {
+    private @NotNull ClickableItem createArrow(@NotNull String nameKey, @NotNull Consumer<InventoryClickEvent> action) {
         final ItemStack itemStack = new ItemStack(Material.ARROW);
         final ItemMeta itemMeta = itemStack.getItemMeta();
         itemMeta.itemName(GlobalTranslator.render(Component.translatable(nameKey), viewer.locale()));
@@ -56,11 +48,26 @@ public class ItemRaceInventoryGUI implements InventoryProvider {
         return ClickableItem.of(itemStack, action);
     }
 
+    private @NotNull ClickableItem createDepositedItem(@NotNull Material material, int stackSize, int amountShown) {
+        final ItemStack itemStack = new ItemStack(material, stackSize);
+        final ItemMeta itemMeta = itemStack.getItemMeta();
+        itemMeta.itemName(
+                GlobalTranslator.render(
+                        Component.translatable("inventorygui.inventory.itemname",
+                                Component.translatable(itemStack.getType().translationKey()),
+                                Component.text(amountShown)
+                        ), viewer.locale()
+                )
+        );
+        itemStack.setItemMeta(itemMeta);
+        return ClickableItem.empty(itemStack);
+    }
+
     private void setPlayer(@Nullable OfflinePlayer player) {
         this.player = player;
         inventory = SmartInventory.builder()
                 .provider(this)
-                .manager(inventoryManager)
+                .manager(plugin.inventoryManager)
                 .title(
                         // SmartInventories doesn't support Adventure components
                         serializeTranslatable(
@@ -85,7 +92,7 @@ public class ItemRaceInventoryGUI implements InventoryProvider {
         if (player == null) {
             // Main menu
             pagination.setItems(
-                    pointsHandler.getEligiblePlayers().stream()
+                    plugin.pointsHandler.getEligiblePlayers().stream()
                             .map(player -> {
                                 final ItemStack itemStack = new ItemStack(Material.PLAYER_HEAD);
                                 final SkullMeta itemMeta = (SkullMeta) itemStack.getItemMeta();
@@ -105,25 +112,19 @@ public class ItemRaceInventoryGUI implements InventoryProvider {
             );
         } else {
             // Inventory menu
-            pagination.setItems(
-                    pointsHandler.getItems(player).entrySet().stream()
-                            .sorted(Map.Entry.comparingByValue(Comparator.comparingInt(Integer::intValue).reversed()))
-                            .map(entry -> {
-                                final ItemStack itemStack = new ItemStack(entry.getKey(), entry.getValue());
-                                final ItemMeta itemMeta = itemStack.getItemMeta();
-                                itemMeta.itemName(
-                                        GlobalTranslator.render(
-                                                Component.translatable("inventorygui.inventory.itemname",
-                                                        Component.translatable(itemStack.getType().translationKey()),
-                                                        Component.text(entry.getValue())
-                                                ), viewer.locale()
-                                        )
-                                );
-                                itemStack.setItemMeta(itemMeta);
-                                return ClickableItem.empty(itemStack);
-                            })
-                            .toArray(ClickableItem[]::new)
-            );
+            final List<ClickableItem> items = new ArrayList<>();
+            plugin.pointsHandler.getItems(player).entrySet().stream()
+                    .sorted(Map.Entry.comparingByValue(Comparator.comparingInt(Integer::intValue).reversed()))
+                    .forEach(entry -> {
+                        if (plugin.config.splitItemsIntoStacks)
+                            for (
+                                    int stackSize = entry.getValue();
+                                    stackSize > 0 ;
+                                    stackSize -= entry.getKey().getMaxStackSize()
+                            ) items.add(createDepositedItem(entry.getKey(), stackSize, entry.getValue()));
+                        else items.add(createDepositedItem(entry.getKey(), entry.getValue(), entry.getValue()));
+                    });
+            pagination.setItems(items.toArray(ClickableItem[]::new));
             if (canViewOtherInventories)
                 contents.set(5, 0, createArrow("inventorygui.button.mainmenu", e -> setPlayer(null)));
         }

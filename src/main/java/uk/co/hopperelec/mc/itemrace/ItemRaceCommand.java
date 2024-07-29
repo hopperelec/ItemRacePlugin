@@ -230,7 +230,7 @@ public class ItemRaceCommand extends BaseCommand {
         if (player == null) player = sender;
         final Component playerNameComponent = Component.text(Objects.requireNonNull(player.getName()));
         if (player == sender || sender.hasPermission("itemrace.inventory"))
-            new ItemRaceInventoryGUI(plugin.inventoryManager, plugin.pointsHandler, sender, player);
+            new ItemRaceInventoryGUI(plugin, sender, player);
         else
             sender.sendMessage(Component.translatable("command.inventory.others.denied", playerNameComponent));
 
