@@ -1,12 +1,12 @@
 package uk.co.hopperelec.mc.itemrace.pointshandling;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scoreboard.Criteria;
@@ -53,23 +53,15 @@ public class DepositedItems extends PointsHandler {
             plugin.getServer().getPluginManager().registerEvents(new ShowScoreboardListener(scoreboard), plugin);
         }
 
-        persistItems: if (config().persistDepositedItems && FILE.exists()) {
+        if (config().persistDepositedItems && FILE.exists()) {
             // Load persisted deposited items
-            final JsonNode fileTree;
-            try {
-                fileTree = new YAMLMapper().readTree(FILE);
-            } catch (IOException e) {
-                plugin.getLogger().warning("Failed to load deposited_items.yml: "+e.getMessage());
-                break persistItems;
-            }
-            fileTree.fields().forEachRemaining(inventory -> {
-                final UUID uuid = UUID.fromString(inventory.getKey());
-
-                inventory.getValue().fields().forEachRemaining(
-                        depositedItem -> trySetAmount(
+            YamlConfiguration.loadConfiguration(FILE).getValues(false).forEach((uuidString, serializedInventory) -> {
+                final UUID uuid = UUID.fromString(uuidString);
+                ((ConfigurationSection) serializedInventory).getValues(false).forEach(
+                        (material, amount) -> trySetAmount(
                                 uuid,
-                                Material.valueOf(depositedItem.getKey()),
-                                depositedItem.getValue().asInt()
+                                Material.valueOf(material),
+                                (int) amount
                         )
                 );
                 refreshScoreboard(plugin.getServer().getOfflinePlayer(uuid));
@@ -101,14 +93,13 @@ public class DepositedItems extends PointsHandler {
     }
 
     public void save() {
-        final Map<UUID, Map<String, Integer>> serializedDepositedItems = new HashMap<>();
-        items.forEach((player, items) -> {
-            final Map<String, Integer> serializedItems = new HashMap<>();
-            items.forEach((material, amount) -> serializedItems.put(material.name(), amount));
-            serializedDepositedItems.put(player, serializedItems);
+        final YamlConfiguration serializedFile = new YamlConfiguration();
+        items.forEach((uuid, inventory) -> {
+            final ConfigurationSection serializedInventory = serializedFile.createSection(uuid.toString());
+            inventory.forEach((material, amount) -> serializedInventory.set(material.name(), amount));
         });
         try {
-            new YAMLMapper().writeValue(FILE, serializedDepositedItems);
+            serializedFile.save(FILE);
         } catch (IOException e) {
             plugin.getLogger().warning("Failed to save deposited_items.yml: "+e.getMessage());
         }

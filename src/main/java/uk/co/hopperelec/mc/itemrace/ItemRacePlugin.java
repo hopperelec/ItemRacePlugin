@@ -2,8 +2,6 @@ package uk.co.hopperelec.mc.itemrace;
 
 import co.aikar.commands.InvalidCommandArgument;
 import co.aikar.commands.PaperCommandManager;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import fr.minuskube.inv.InventoryManager;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
@@ -19,10 +17,8 @@ import org.jetbrains.annotations.NotNull;
 import uk.co.hopperelec.mc.itemrace.listeners.DepositGUIListener;
 import uk.co.hopperelec.mc.itemrace.pointshandling.*;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.StreamSupport;
 
 import static uk.co.hopperelec.mc.itemrace.ItemRaceUtils.*;
 
@@ -46,28 +42,26 @@ public final class ItemRacePlugin extends JavaPlugin {
 
         // Load config
         saveDefaultConfig();
-        final JsonNode configFile = new YAMLMapper().readTree(new File(getDataFolder(), "config.yml"));
         config = new ItemRaceConfig(
-                PointsAwardMode.valueOf(configFile.get("points").get("award_mode").asText().toUpperCase()),
-                configFile.get("points").get("items_per_point_growth_rate").asInt(),
-                configFile.get("points").get("award_for_first_item").asBoolean(),
-                configFile.get("points").get("max_per_item_type").asInt(),
-                configFile.get("deposited_items").get("persist").asBoolean(),
-                (int)(configFile.get("deposited_items").get("autosave_frequency").asDouble() * 60 * 20),
-                configFile.get("scoreboard").get("default_state").asBoolean(),
-                switch (configFile.get("scoreboard").get("display_slot").asText().toUpperCase()) {
+                PointsAwardMode.valueOf(Objects.requireNonNull(getConfig().getString("points.award_mode")).toUpperCase()),
+                getConfig().getInt("points.items_per_point_growth_rate"),
+                getConfig().getBoolean("points.award_for_first_item"),
+                getConfig().getInt("points.max_per_item_type"),
+                getConfig().getBoolean("deposited_items.persist"),
+                (int)(getConfig().getDouble("deposited_items.autosave_frequency") * 60 * 20),
+                getConfig().getBoolean("scoreboard.default_state"),
+                switch (Objects.requireNonNull(getConfig().getString("scoreboard.display_slot")).toUpperCase()) {
                     case "SIDEBAR" -> DisplaySlot.SIDEBAR;
                     case "BELOW_NAME" -> DisplaySlot.BELOW_NAME;
                     case "PLAYER_LIST" -> DisplaySlot.PLAYER_LIST;
                     default -> throw new IllegalStateException("scoreboard.display_slot must be one of SIDEBAR, BELOW_NAME or PLAYER_LIST");
                 },
-                configFile.get("inventory_gui").get("split_into_stacks").asBoolean(),
-                StreamSupport.stream(configFile.get("denylist").get("items").spliterator(), false)
-                        .map(JsonNode::asText)
+                getConfig().getBoolean("inventory_gui.split_into_stacks"),
+                getConfig().getStringList("denylist.items").stream()
                         .map(ItemType::new)
                         .toArray(ItemType[]::new),
-                configFile.get("denylist").get("treat_as_allowlist").asBoolean(),
-                configFile.get("denylist").get("allow_damaged_tools").asBoolean()
+                getConfig().getBoolean("denylist.treat_as_allowlist"),
+                getConfig().getBoolean("denylist.allow_damaged_tools")
         );
 
         pointsHandler = switch (config.pointsAwardMode) {
