@@ -1,7 +1,10 @@
 points:
   # When to award points for items. One of:
-  # - AUTO_DEPOSIT:
+  # - AUTO_DEPOSIT_ALL:
   #   All items a player picks up are automatically moved into their ItemRace inventory which they cannot take items out of.
+  # - AUTO_DEPOSIT:
+  #   Similar to AUTO_DEPOSIT_ALL but only items which the player can earn points for will be deposited.
+  #   This is only really useful if a denylist has been created
   # - DEPOSIT_COMMAND:
   #   Similar to AUTO_DEPOSIT, but players choose which items to move to their ItemRace inventory using `/itemrace deposit`.
   #   If no arguments are specified, the item in the player's hand is deposited.
@@ -39,7 +42,7 @@ points:
 
   # Whether damaged tools should count towards the total number of each tool a player has deposited (true/false)
   # If this is false, players will not be able to deposit damaged tools in `DEPOSIT_COMMAND` or `DEPOSIT_INVENTORY` mode.
-  # If this is false, damaged tools will still be removed from players' inventories in AUTO_DEPOSIT mode
+  # If this is false, damaged tools will still be removed from players' inventories in AUTO_DEPOSIT_ALL mode
   #   but won't be added to their ItemRace inventory.
   allow_damaged_tools: true
 

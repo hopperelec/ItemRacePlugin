@@ -7,7 +7,6 @@ import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scoreboard.Criteria;
@@ -65,11 +64,12 @@ public class DepositedItems extends PointsHandler {
             }
             fileTree.fields().forEachRemaining(inventory -> {
                 final UUID uuid = UUID.fromString(inventory.getKey());
+
                 inventory.getValue().fields().forEachRemaining(
-                        depositedItem -> setAmount(
+                        depositedItem -> trySetAmount(
                                 uuid,
                                 Material.valueOf(depositedItem.getKey()),
-                                Math.min(depositedItem.getValue().asInt(), config().maxItemsAwardedPoints)
+                                depositedItem.getValue().asInt()
                         )
                 );
                 refreshScoreboard(plugin.getServer().getOfflinePlayer(uuid));
@@ -126,8 +126,7 @@ public class DepositedItems extends PointsHandler {
         catch (IllegalArgumentException ignored) {}
     }
     public void tryDeposit(@NotNull OfflinePlayer player, @NotNull ItemStack itemStack) {
-        try { deposit(player, itemStack.getType(), itemStack.getAmount()); }
-        catch (IllegalArgumentException ignored) {}
+        tryDeposit(player, itemStack.getType(), itemStack.getAmount());
     }
     // Will leave any items that couldn't be deposited in the inventory
     public void tryDeposit(@NotNull OfflinePlayer player, @NotNull Inventory inventory) {
@@ -139,10 +138,6 @@ public class DepositedItems extends PointsHandler {
                 itemStack.setAmount(itemStack.getAmount() - amount);
             }
         }
-    }
-    public void clearAndTryDeposit(@NotNull Player player, @NotNull ItemStack itemStack) {
-        tryDeposit(player, itemStack);
-        itemStack.setAmount(0);
     }
 
     public int getAmount(@NotNull OfflinePlayer player, @NotNull Material itemType) {
@@ -166,6 +161,16 @@ public class DepositedItems extends PointsHandler {
     public void setAmount(@NotNull OfflinePlayer player, @NotNull Material itemType, int amount) {
         setAmount(player.getUniqueId(), itemType, amount);
         refreshScoreboard(player);
+    }
+
+
+    public void trySetAmount(@NotNull UUID uuid, @NotNull Material itemType, int amount) {
+        try { setAmount(uuid, itemType, amount); }
+        catch (IllegalArgumentException ignored) {}
+    }
+    public void trySetAmount(@NotNull OfflinePlayer player, @NotNull Material itemType, int amount) {
+        try { setAmount(player, itemType, amount); }
+        catch (IllegalArgumentException ignored) {}
     }
 
     protected void refreshScoreboard(@NotNull OfflinePlayer player) {

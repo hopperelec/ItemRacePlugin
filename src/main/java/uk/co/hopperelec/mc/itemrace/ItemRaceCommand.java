@@ -53,11 +53,7 @@ public class ItemRaceCommand extends BaseCommand {
         }
     }
     
-    protected void onDepositAll(@NotNull Player player, @NotNull Material material) {
-        if (!(plugin.pointsHandler instanceof DepositedItems depositedItems)) {
-            player.sendMessage(Component.translatable("command.deposit.disabled"));
-            return;
-        }
+    protected void onDepositAll(@NotNull Player player, @NotNull DepositedItems depositedItems, @NotNull Material material) {
         // Check if the player has already been awarded the maximum number of points for the given material
         if (depositedItems.isMaxed(player, material)) {
             player.sendMessage(Component.translatable("command.deposit.full",
@@ -101,11 +97,9 @@ public class ItemRaceCommand extends BaseCommand {
         ));
     }
     
-    protected void onDepositInventory(@NotNull Player player) {
-        if (plugin.pointsHandler instanceof DepositedItems depositedItems) {
-            depositedItems.tryDeposit(player, player.getInventory());
-            player.sendMessage(Component.translatable("command.deposit.inventory.success"));
-        } else player.sendMessage(Component.translatable("command.deposit.disabled"));
+    protected void onDepositInventory(@NotNull Player player, @NotNull DepositedItems depositedItems) {
+        depositedItems.tryDeposit(player, player.getInventory());
+        player.sendMessage(Component.translatable("command.deposit.inventory.success"));
     }
 
     // Returns the number of items which couldn't be removed
@@ -123,11 +117,7 @@ public class ItemRaceCommand extends BaseCommand {
         return amount;
     }
     
-    protected void onDeposit(@NotNull Player player, int amount, @NotNull Material material, boolean mainHand) {
-        if (!(plugin.pointsHandler instanceof DepositedItems depositedItems)) {
-            player.sendMessage(Component.translatable("command.deposit.disabled"));
-            return;
-        }
+    protected void onDeposit(@NotNull Player player, @NotNull DepositedItems depositedItems, int amount, @NotNull Material material, boolean mainHand) {
         // Check if the player has already been awarded the maximum number of points for the given material
         if (depositedItems.isMaxed(player, material)) {
             player.sendMessage(Component.translatable("command.deposit.full",
@@ -180,15 +170,19 @@ public class ItemRaceCommand extends BaseCommand {
         @NotNull Player player,
         @Optional @Name("amount") String amountStr, @Optional @Name("item") ItemType itemType
     ) {
+        if (!(plugin.pointsHandler instanceof DepositedItems depositedItems)) {
+            player.sendMessage(Component.translatable("command.deposit.disabled"));
+            return;
+        }
         if (Objects.equals(amountStr, "all")) {
-            onDepositAll(player, itemType == null ? player.getInventory().getItemInMainHand().getType() : itemType.material());
+            onDepositAll(player, depositedItems, itemType == null ? player.getInventory().getItemInMainHand().getType() : itemType.material());
             
         } else if (Objects.equals(amountStr, "inventory")) {
             if (itemType != null) {
                 player.sendMessage(Component.translatable("command.deposit.inventory.itemtype"));
                 return;
             }
-            onDepositInventory(player);
+            onDepositInventory(player, depositedItems);
             
         } else if (plugin.config.pointsAwardMode == PointsAwardMode.DEPOSIT_GUI && amountStr == null) {
             plugin.openDepositGUI(player);
@@ -219,7 +213,7 @@ public class ItemRaceCommand extends BaseCommand {
                 }
             }
 
-            onDeposit(player, amountInt, material, itemType == null && amountStr == null);
+            onDeposit(player, depositedItems, amountInt, material, itemType == null && amountStr == null);
         }
     }
 

@@ -71,7 +71,7 @@ public final class ItemRacePlugin extends JavaPlugin {
         );
 
         pointsHandler = switch (config.pointsAwardMode) {
-            case AUTO_DEPOSIT -> new AutoDepositor(this);
+            case AUTO_DEPOSIT_ALL, AUTO_DEPOSIT -> new AutoDepositor(this);
             case DEPOSIT_COMMAND, DEPOSIT_GUI -> new DepositedItems(this, true);
             case MAX_INVENTORY -> new MaxInventoryPointsHandler(this);
             case INVENTORY -> new InventoryPointsHandler(this);
