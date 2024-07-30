@@ -13,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import uk.co.hopperelec.mc.itemrace.pointshandling.DepositedItems;
 import uk.co.hopperelec.mc.itemrace.pointshandling.PointsAwardMode;
 
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Objects;
 
@@ -241,7 +242,7 @@ public class ItemRaceCommand extends BaseCommand {
             int ownPosition = -1;
             for (
                     Map.Entry<OfflinePlayer, Integer> score :
-                    scores.entrySet().stream().sorted(Map.Entry.comparingByValue()).limit(10).toList()
+                    scores.entrySet().stream().sorted(Map.Entry.comparingByValue(Comparator.reverseOrder())).limit(10).toList()
             ) {
                 if (score.getKey() == sender) ownPosition = positionI;
                 sender.sendMessage(

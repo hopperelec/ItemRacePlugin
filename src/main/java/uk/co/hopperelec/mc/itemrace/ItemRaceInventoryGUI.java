@@ -93,7 +93,10 @@ public class ItemRaceInventoryGUI implements InventoryProvider {
             // Main menu
             pagination.setItems(
                     plugin.pointsHandler.getEligiblePlayers().stream()
-                            .map(player -> {
+                            .sorted(Comparator.comparing(
+                                    player -> Objects.requireNonNull(player.getName()),
+                                    String.CASE_INSENSITIVE_ORDER
+                            )).map(player -> {
                                 final ItemStack itemStack = new ItemStack(Material.PLAYER_HEAD);
                                 final SkullMeta itemMeta = (SkullMeta) itemStack.getItemMeta();
                                 final PlayerProfile playerProfile = player.getPlayerProfile();
@@ -114,7 +117,7 @@ public class ItemRaceInventoryGUI implements InventoryProvider {
             // Inventory menu
             final List<ClickableItem> items = new ArrayList<>();
             plugin.pointsHandler.getItems(player).entrySet().stream()
-                    .sorted(Map.Entry.comparingByValue(Comparator.comparingInt(Integer::intValue).reversed()))
+                    .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
                     .forEach(entry -> {
                         if (plugin.config.splitItemsIntoStacks)
                             for (

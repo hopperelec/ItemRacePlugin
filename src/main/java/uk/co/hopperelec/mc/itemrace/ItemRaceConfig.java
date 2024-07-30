@@ -19,7 +19,6 @@ public class ItemRaceConfig {
     public final boolean awardPointForFirstItem;
     public final int maxPointsPerItemType;
     public final int maxItemsAwardedPoints; // Calculated
-    public final boolean allowDamagedTools;
     // Inventory
     public final boolean persistDepositedItems;
     public final int autosaveFrequencyTicks;
@@ -31,27 +30,27 @@ public class ItemRaceConfig {
     // Denylist
     public final @NotNull ItemType @NotNull [] denylistItems;
     public final boolean treatDenylistAsWhitelist;
+    public final boolean allowDamagedTools;
 
     public ItemRaceConfig(
             @NotNull PointsAwardMode pointsAwardMode,
             int itemsPerPointGrowthRate,
             boolean awardPointForFirstItem,
             int maxPointsPerItemType,
-            boolean allowDamagedTools,
             boolean persistDepositedItems,
             int autosaveFrequencyTicks,
             boolean defaultScoreboardState,
             @NotNull DisplaySlot scoreboardDisplaySlot,
             boolean splitItemsIntoStacks,
             @NotNull ItemType @NotNull [] denylistItems,
-            boolean treatDenylistAsWhitelist
+            boolean treatDenylistAsWhitelist,
+            boolean allowDamagedTools
     ) {
         this.pointsAwardMode = pointsAwardMode;
         if (itemsPerPointGrowthRate < 1) throw new IllegalArgumentException("itemsPerPointGrowthRate must be at least 1");
         this.itemsPerPointGrowthRate = itemsPerPointGrowthRate;
         this.awardPointForFirstItem = awardPointForFirstItem;
         this.maxPointsPerItemType = maxPointsPerItemType;
-        this.allowDamagedTools = allowDamagedTools;
         this.persistDepositedItems = persistDepositedItems;
         this.autosaveFrequencyTicks = autosaveFrequencyTicks;
         this.defaultScoreboardState = defaultScoreboardState;
@@ -59,6 +58,7 @@ public class ItemRaceConfig {
         this.splitItemsIntoStacks = splitItemsIntoStacks;
         this.denylistItems = denylistItems;
         this.treatDenylistAsWhitelist = treatDenylistAsWhitelist;
+        this.allowDamagedTools = allowDamagedTools;
 
         maxItemsAwardedPoints =
                 maxPointsPerItemType < 0 ? Integer.MAX_VALUE : (

@@ -52,7 +52,6 @@ public final class ItemRacePlugin extends JavaPlugin {
                 configFile.get("points").get("items_per_point_growth_rate").asInt(),
                 configFile.get("points").get("award_for_first_item").asBoolean(),
                 configFile.get("points").get("max_per_item_type").asInt(),
-                configFile.get("points").get("allow_damaged_tools").asBoolean(),
                 configFile.get("deposited_items").get("persist").asBoolean(),
                 (int)(configFile.get("deposited_items").get("autosave_frequency").asDouble() * 60 * 20),
                 configFile.get("scoreboard").get("default_state").asBoolean(),
@@ -67,7 +66,8 @@ public final class ItemRacePlugin extends JavaPlugin {
                         .map(JsonNode::asText)
                         .map(ItemType::new)
                         .toArray(ItemType[]::new),
-                configFile.get("denylist").get("treat_as_allowlist").asBoolean()
+                configFile.get("denylist").get("treat_as_allowlist").asBoolean(),
+                configFile.get("denylist").get("allow_damaged_tools").asBoolean()
         );
 
         pointsHandler = switch (config.pointsAwardMode) {
