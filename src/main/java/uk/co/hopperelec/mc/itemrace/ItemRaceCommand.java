@@ -10,6 +10,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import uk.co.hopperelec.mc.itemrace.gui.DepositGUI;
+import uk.co.hopperelec.mc.itemrace.gui.DepositedItemsGUI;
 import uk.co.hopperelec.mc.itemrace.pointshandling.DepositedItems;
 import uk.co.hopperelec.mc.itemrace.pointshandling.PointsAwardMode;
 
@@ -186,7 +188,7 @@ public class ItemRaceCommand extends BaseCommand {
             onDepositInventory(player, depositedItems);
             
         } else if (plugin.config.pointsAwardMode == PointsAwardMode.DEPOSIT_GUI && amountStr == null) {
-            plugin.openDepositGUI(player);
+            new DepositGUI(plugin, player);
             
         } else {
             final Material material;
@@ -225,7 +227,7 @@ public class ItemRaceCommand extends BaseCommand {
         if (player == null) player = sender;
         final Component playerNameComponent = Component.text(Objects.requireNonNull(player.getName()));
         if (player == sender || sender.hasPermission("itemrace.inventory"))
-            new ItemRaceInventoryGUI(plugin, sender, player);
+            new DepositedItemsGUI(plugin, sender, player);
         else
             sender.sendMessage(Component.translatable("command.inventory.others.denied", playerNameComponent));
 

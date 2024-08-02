@@ -65,7 +65,7 @@ scoreboard:
 
 # Options related to the GUI shown when a player enters `/itemrace inventory`.
 # This GUI is not accessible if `points.award_mode is `INVENTORY` OR `ENDER_CHEST`
-inventory_gui:
+deposited_items_gui:
   # Whether to split an item type into multiple stacks (true) or combine them into one stack (false).
   # If this is false, the number displayed on the stack by the Minecraft client will still be limited to the max stack size.
   #  For example, if a player has deposited 128 dirt, it will be shown as a stack of 64 dirt with the name "Dirt x128"

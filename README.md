@@ -28,11 +28,13 @@ or using the sidebar which can be toggled using `/itemrace togglescoreboard`.
 
 Players can view each other's ItemRace inventories using `/itemrace inventory`, which will open up a paginated GUI listing deposited items.
 
-![Inventory GUI - Double chest with title "hopperelec's ItemRace inventory" and with two buttons on the bottom, one named "Next page"](screenshots/inventory-gui.webp)
+<!-- TODO: Update screenshot -->
+![Inventory GUI - Double chest with title "hopperelec's ItemRace inventory" and with two buttons on the bottom, one named "Next page"](screenshots/deposited-items-gui.webp)
 
-From the inventory GUI, players can also access the main menu which will list other players to view the inventories of.
+From the deposited items GUI, players can also access a list of other players for whom to view the deposited items.
 
-![Inventory GUI main menu - Double chest with title "ItemRace inventories" containing player skulls, one named "View Phantom_RX's ItemRace inventory"](screenshots/inventory-gui-mainmenu.webp)
+<!-- TODO: Update screenshot -->
+![Players GUI - Double chest with title "ItemRace inventories" containing player skulls, one named "View Phantom_RX's ItemRace inventory"](screenshots/players-gui.webp)
 
 
 ## Point award modes
