@@ -268,14 +268,11 @@ public class ItemRaceCommand extends BaseCommand {
     @Subcommand("togglescoreboard|tsb")
     @CommandPermission("itemrace.togglescoreboard")
     public void onToggleScoreboard(@NotNull Player player) {
-        if (!(plugin.pointsHandler instanceof DepositedItems depositedItems)) {
-            player.sendMessage(Component.translatable("command.togglescoreboard.unsupported"));
-            return;
-        }
-        if (player.getScoreboard() == depositedItems.scoreboard) {
-            player.setScoreboard(getScoreboardManager().getMainScoreboard());
-        } else {
-            player.setScoreboard(depositedItems.scoreboard);
-        }
+        if (plugin.pointsHandler instanceof DepositedItems depositedItems) {
+            if (player.getScoreboard() == depositedItems.scoreboard)
+                player.setScoreboard(getScoreboardManager().getMainScoreboard());
+            else
+                player.setScoreboard(depositedItems.scoreboard);
+        } else player.sendMessage(Component.translatable("command.togglescoreboard.unsupported"));
     }
 }
