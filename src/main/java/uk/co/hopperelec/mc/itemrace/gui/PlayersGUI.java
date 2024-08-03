@@ -48,7 +48,6 @@ public class PlayersGUI extends PaginatedGUI {
         final List<ItemStack> newItems = getItems();
         for (int i = 0; i < newItems.size(); i++) {
             if (newItems.get(i).getItemMeta() instanceof SkullMeta skullMeta){
-                System.out.println("Is "+skullMeta.getOwningPlayer()+" the player?");
                 if (skullMeta.getOwningPlayer() == player) {
                     newItems.set(i, newItems.get(i).withType(Material.BARRIER));
                     break;
