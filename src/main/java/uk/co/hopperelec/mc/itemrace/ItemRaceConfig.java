@@ -19,14 +19,13 @@ public class ItemRaceConfig {
     public final boolean awardPointForFirstItem;
     public final int maxPointsPerItemType;
     public final int maxItemsAwardedPoints; // Calculated
-    // Inventory
+    // Deposited items
     public final boolean persistDepositedItems;
     public final int autosaveFrequencyTicks;
+    public final boolean splitItemsIntoStacks;
     // Scoreboard
     public final boolean defaultScoreboardState;
     public final @NotNull DisplaySlot scoreboardDisplaySlot;
-    // Inventory GUI
-    public final boolean splitItemsIntoStacks;
     // Denylist
     public final @NotNull ItemType @NotNull [] denylistItems;
     public final boolean treatDenylistAsWhitelist;
@@ -39,9 +38,9 @@ public class ItemRaceConfig {
             int maxPointsPerItemType,
             boolean persistDepositedItems,
             int autosaveFrequencyTicks,
+            boolean splitItemsIntoStacks,
             boolean defaultScoreboardState,
             @NotNull DisplaySlot scoreboardDisplaySlot,
-            boolean splitItemsIntoStacks,
             @NotNull ItemType @NotNull [] denylistItems,
             boolean treatDenylistAsWhitelist,
             boolean allowDamagedTools
@@ -53,9 +52,9 @@ public class ItemRaceConfig {
         this.maxPointsPerItemType = maxPointsPerItemType;
         this.persistDepositedItems = persistDepositedItems;
         this.autosaveFrequencyTicks = autosaveFrequencyTicks;
+        this.splitItemsIntoStacks = splitItemsIntoStacks;
         this.defaultScoreboardState = defaultScoreboardState;
         this.scoreboardDisplaySlot = scoreboardDisplaySlot;
-        this.splitItemsIntoStacks = splitItemsIntoStacks;
         this.denylistItems = denylistItems;
         this.treatDenylistAsWhitelist = treatDenylistAsWhitelist;
         this.allowDamagedTools = allowDamagedTools;

@@ -48,6 +48,7 @@ public final class ItemRacePlugin extends JavaPlugin {
                 getConfig().getInt("points.max_per_item_type"),
                 getConfig().getBoolean("deposited_items.persist"),
                 (int)(getConfig().getDouble("deposited_items.autosave_frequency") * 60 * 20),
+                getConfig().getBoolean("deposited_items.gui.split_into_stacks"),
                 getConfig().getBoolean("scoreboard.default_state"),
                 switch (Objects.requireNonNull(getConfig().getString("scoreboard.display_slot")).toUpperCase()) {
                     case "SIDEBAR" -> DisplaySlot.SIDEBAR;
@@ -55,7 +56,6 @@ public final class ItemRacePlugin extends JavaPlugin {
                     case "PLAYER_LIST" -> DisplaySlot.PLAYER_LIST;
                     default -> throw new IllegalStateException("scoreboard.display_slot must be one of SIDEBAR, BELOW_NAME or PLAYER_LIST");
                 },
-                getConfig().getBoolean("deposited_items_gui.split_into_stacks"),
                 getConfig().getStringList("denylist.items").stream()
                         .map(ItemType::new)
                         .toArray(ItemType[]::new),
