@@ -68,7 +68,10 @@ public class DepositedItemsGUI extends PaginatedGUI {
     private @NotNull ItemStack createDepositedItem(@NotNull Material material, int stackSize, int amountShown, boolean setMaxStackSize) {
         final ItemStack itemStack = new ItemStack(material, stackSize);
         final ItemMeta itemMeta = itemStack.getItemMeta();
-        if (setMaxStackSize) itemMeta.setMaxStackSize(99);
+        if (setMaxStackSize) {
+            itemMeta.setMaxStackSize(99);
+            if (stackSize > 99) itemMeta.setEnchantmentGlintOverride(true);
+        }
         itemMeta.itemName(
                 GlobalTranslator.render(
                         Component.translatable("gui.deposited_items.item_name",
