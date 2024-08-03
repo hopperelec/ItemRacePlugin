@@ -59,15 +59,16 @@ public class DepositedItemsGUI extends PaginatedGUI {
                                 int stackSize = entry.getValue();
                                 stackSize > 0 ;
                                 stackSize -= entry.getKey().getMaxStackSize()
-                        ) items.add(createDepositedItem(entry.getKey(), stackSize, entry.getValue()));
-                    else items.add(createDepositedItem(entry.getKey(), entry.getValue(), entry.getValue()));
+                        ) items.add(createDepositedItem(entry.getKey(), stackSize, entry.getValue(), false));
+                    else items.add(createDepositedItem(entry.getKey(), entry.getValue(), entry.getValue(), true));
                 });
         setItems(items);
     }
 
-    private @NotNull ItemStack createDepositedItem(@NotNull Material material, int stackSize, int amountShown) {
+    private @NotNull ItemStack createDepositedItem(@NotNull Material material, int stackSize, int amountShown, boolean setMaxStackSize) {
         final ItemStack itemStack = new ItemStack(material, stackSize);
         final ItemMeta itemMeta = itemStack.getItemMeta();
+        if (setMaxStackSize) itemMeta.setMaxStackSize(99);
         itemMeta.itemName(
                 GlobalTranslator.render(
                         Component.translatable("gui.deposited_items.item_name",
