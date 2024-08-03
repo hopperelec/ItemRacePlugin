@@ -18,7 +18,7 @@ points:
   #   Players are scored based on the items currently in their inventory.
   # - ENDER_CHEST:
   #   Similar to INVENTORY, but also includes items in their ender chest.
-  # NOTE: Currently, INVENTORY and ENDER_CHEST do not support the scoreboard and only work for players who are currently online!
+  # NOTE: Currently, INVENTORY and ENDER_CHEST do not support any live updates (e.g: scoreboard, and in GUIs) and only work for players who are currently online!
   award_mode: DEPOSIT_GUI
 
   # The rate at which the number of items needed to get each point increases (positive integer)

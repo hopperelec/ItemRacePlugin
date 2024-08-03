@@ -13,6 +13,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.jetbrains.annotations.NotNull;
 import uk.co.hopperelec.mc.itemrace.listeners.GUIListener;
+import uk.co.hopperelec.mc.itemrace.listeners.OnlineEligiblePlayerListener;
 import uk.co.hopperelec.mc.itemrace.pointshandling.*;
 
 import java.io.IOException;
@@ -74,6 +75,8 @@ public final class ItemRacePlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         pointsHandler.onEnable();
+        if (pointsHandler instanceof InventoryPointsHandler)
+            getServer().getPluginManager().registerEvents(new OnlineEligiblePlayerListener(guiListener), this);
         // Load commands
         final PaperCommandManager commandManager = new PaperCommandManager(this);
         commandManager.getCommandCompletions().registerCompletion(

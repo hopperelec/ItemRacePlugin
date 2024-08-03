@@ -1,5 +1,6 @@
 package uk.co.hopperelec.mc.itemrace.listeners;
 
+import org.bukkit.OfflinePlayer;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -14,8 +15,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class GUIListener implements Listener {
-    final ItemRacePlugin plugin;
-    final Set<ItemRaceGUI> guis = new HashSet<>();
+    private final ItemRacePlugin plugin;
+    private final Set<ItemRaceGUI> guis = new HashSet<>();
 
     public GUIListener(@NotNull ItemRacePlugin plugin) {
         this.plugin = plugin;
@@ -51,5 +52,17 @@ public class GUIListener implements Listener {
             )
                 itemRaceGUI.onMoveInto(event);
         }
+    }
+
+    public void refreshDepositedItems(@NotNull OfflinePlayer player) {
+        guis.forEach(gui -> gui.onRefreshDepositedItems(player));
+    }
+
+    public void addEligiblePlayer(@NotNull OfflinePlayer player) {
+        guis.forEach(gui -> gui.onAddEligiblePlayer(player));
+    }
+
+    public void removeEligiblePlayer(@NotNull OfflinePlayer player) {
+        guis.forEach(gui -> gui.onRemoveEligiblePlayer(player));
     }
 }

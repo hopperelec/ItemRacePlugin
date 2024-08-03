@@ -45,4 +45,20 @@ public class DepositGUI extends ItemRaceGUI {
         if (!plugin.config.awardPointsFor(event.getCurrentItem()))
             event.setCancelled(true);
     }
+
+    @Override
+    public void onRefreshDepositedItems(@NotNull OfflinePlayer player) {
+        if (player.getPlayer() == viewer)
+            throw new IllegalStateException("A player should not be able to deposit items while still viewing the deposit GUI");
+    }
+    @Override
+    public void onAddEligiblePlayer(@NotNull OfflinePlayer player) {
+        if (player.getPlayer() == viewer)
+            throw new IllegalStateException("A player should not become eligible while already viewing the deposit GUI");
+    }
+    @Override
+    public void onRemoveEligiblePlayer(@NotNull OfflinePlayer player) {
+        if (player.getPlayer() == viewer)
+            throw new IllegalStateException("A player should not become ineligible while still viewing the deposit GUI");
+    }
 }

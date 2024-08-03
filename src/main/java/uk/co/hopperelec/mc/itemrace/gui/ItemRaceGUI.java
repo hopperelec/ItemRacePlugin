@@ -1,6 +1,7 @@
 package uk.co.hopperelec.mc.itemrace.gui;
 
 import net.kyori.adventure.text.Component;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
@@ -29,4 +30,7 @@ public abstract class ItemRaceGUI implements InventoryHolder {
     public void onClose(@NotNull InventoryCloseEvent event) {}
     public void onClick(@NotNull InventoryClickEvent event) {}
     public void onMoveInto(@NotNull InventoryClickEvent event) {}
+    public void onRefreshDepositedItems(@NotNull OfflinePlayer player) {}
+    public void onAddEligiblePlayer(@NotNull OfflinePlayer player) {}
+    public void onRemoveEligiblePlayer(@NotNull OfflinePlayer player) {}
 }

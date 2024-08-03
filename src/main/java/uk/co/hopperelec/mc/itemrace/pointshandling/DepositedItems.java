@@ -150,8 +150,11 @@ public class DepositedItems extends PointsHandler {
             throw new IllegalArgumentException("Amount exceeds maxItemsAwardedPoints");
     }
     public void setAmount(@NotNull OfflinePlayer player, @NotNull Material itemType, int amount) {
+        boolean isNew = !items.containsKey(player.getUniqueId());
         setAmount(player.getUniqueId(), itemType, amount);
         refreshScoreboard(player);
+        if (isNew) plugin.guiListener.addEligiblePlayer(player);
+        else plugin.guiListener.refreshDepositedItems(player);
     }
 
 
@@ -177,12 +180,12 @@ public class DepositedItems extends PointsHandler {
     }
 
     public void reset() {
-        items.clear();
-        scoreboard.getEntries().forEach(scoreboard::resetScores);
+        getEligiblePlayers().forEach(this::reset);
     }
 
     public void reset(@NotNull OfflinePlayer player) {
         items.remove(player.getUniqueId());
         scoreboard.resetScores(player);
+        plugin.guiListener.removeEligiblePlayer(player);
     }
 }

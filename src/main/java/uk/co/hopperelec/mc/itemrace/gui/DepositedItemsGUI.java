@@ -32,7 +32,24 @@ public class DepositedItemsGUI extends PaginatedGUI {
             throw new IllegalStateException("Player " + viewer.getName() + " does not have permission to view other player's inventories");
         if (canViewOtherInventories)
             getInventory().setItem(PLAYERS_BUTTON_SLOT, createArrow("gui.deposited_items.players_button"));
+        setItems();
+    }
 
+    @Override
+    public void onClick(@NotNull InventoryClickEvent event) {
+        super.onClick(event);
+        if (
+                event.getSlot() == PLAYERS_BUTTON_SLOT && event.getClick().isMouseClick() &&
+                event.getWhoClicked().hasPermission("itemrace.inventory")
+        ) new PlayersGUI(plugin, viewer);
+    }
+
+    @Override
+    public void onRefreshDepositedItems(@NotNull OfflinePlayer player) {
+        if (this.player == player) setItems();
+    }
+
+    private void setItems() {
         final List<ItemStack> items = new ArrayList<>();
         plugin.pointsHandler.getItems(player).entrySet().stream()
                 .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
@@ -61,15 +78,5 @@ public class DepositedItemsGUI extends PaginatedGUI {
         );
         itemStack.setItemMeta(itemMeta);
         return itemStack;
-    }
-
-    @Override
-    public void onClick(@NotNull InventoryClickEvent event) {
-        super.onClick(event);
-        if (
-                event.getSlot() == PLAYERS_BUTTON_SLOT && event.getClick().isMouseClick() &&
-                event.getWhoClicked().hasPermission("itemrace.inventory")
-        )
-            new PlayersGUI(plugin, viewer);
     }
 }

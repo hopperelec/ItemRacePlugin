@@ -10,6 +10,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import uk.co.hopperelec.mc.itemrace.ItemRacePlugin;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public abstract class PaginatedGUI extends ItemRaceGUI {
@@ -26,21 +28,31 @@ public abstract class PaginatedGUI extends ItemRaceGUI {
         super(plugin, viewer, SLOTS, title);
     }
 
-    public void setItems(@NotNull List<ItemStack> items) {
-        this.items = items;
+    public List<ItemStack> getItems() {
+        return new ArrayList<>(items);
+    }
+
+    public void setItems(@NotNull Collection<ItemStack> items) {
+        this.items = new ArrayList<>(items);
         numPages = Math.max(1, Math.ceilDiv(items.size(), NUM_ITEMS_PER_PAGE));
         if (page > numPages) page = numPages;
         draw();
+    }
+
+    public void addItem(@NotNull ItemStack item) {
+        items.add(item);
+        if (items.size() != 1 && numPages % NUM_ITEMS_PER_PAGE == 1) {
+            if (page == numPages++) drawNextArrow();
+        } else if (page == numPages) getInventory().addItem(item);
     }
 
     private void draw() {
         // Add paginated items
         final int startOfPage = (page - 1) * NUM_ITEMS_PER_PAGE;
         int pagedIndex = 0;
-        while (pagedIndex < NUM_ITEMS_PER_PAGE) {
-            final int itemsIndex = startOfPage + pagedIndex;
-            getInventory().setItem(pagedIndex++, items.get(itemsIndex));
-            if (itemsIndex == items.size() - 1) break;
+        int itemsIndex = startOfPage + pagedIndex;
+        while (pagedIndex < NUM_ITEMS_PER_PAGE && itemsIndex < items.size()) {
+            getInventory().setItem(pagedIndex++, items.get(itemsIndex++));
         }
         while (pagedIndex < NUM_ITEMS_PER_PAGE) {
             getInventory().clear(pagedIndex++);
@@ -50,7 +62,11 @@ public abstract class PaginatedGUI extends ItemRaceGUI {
         if (page == 1) getInventory().clear(PREVIOUS_BUTTON_SLOT);
         else getInventory().setItem(PREVIOUS_BUTTON_SLOT, createArrow("gui.button.previous"));
         if (page == numPages) getInventory().clear(NEXT_BUTTON_SLOT);
-        else getInventory().setItem(NEXT_BUTTON_SLOT, createArrow("gui.button.next"));
+        else drawNextArrow();
+    }
+
+    private void drawNextArrow() {
+        getInventory().setItem(NEXT_BUTTON_SLOT, createArrow("gui.button.next"));
     }
 
     protected @NotNull ItemStack createArrow(@NotNull String nameKey) {
