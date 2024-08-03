@@ -12,16 +12,18 @@ import org.jetbrains.annotations.NotNull;
 import uk.co.hopperelec.mc.itemrace.ItemRacePlugin;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class PlayersGUI extends PaginatedGUI {
     public PlayersGUI(@NotNull ItemRacePlugin plugin, @NotNull Player viewer) {
         super(plugin, viewer, Component.translatable("gui.players.title"));
+        final AtomicInteger index = new AtomicInteger();
         setItems(
                 plugin.pointsHandler.getEligiblePlayers().stream()
                         .sorted(Comparator.comparing(
                                 player -> Objects.requireNonNull(player.getName()),
                                 String.CASE_INSENSITIVE_ORDER
-                        )).map(this::createSkull).toList()
+                        )).map(player -> createSkull(player, index.getAndIncrement())).toList()
         );
     }
 
@@ -37,7 +39,7 @@ public class PlayersGUI extends PaginatedGUI {
 
     @Override
     public void onAddEligiblePlayer(@NotNull OfflinePlayer player) {
-        addItem(createSkull(player));
+        addItem(createSkull(player, getNumItems()));
     }
 
     @Override
@@ -56,7 +58,7 @@ public class PlayersGUI extends PaginatedGUI {
         setItems(newItems);
     }
 
-    private @NotNull ItemStack createSkull(@NotNull OfflinePlayer player) {
+    private @NotNull ItemStack createSkull(@NotNull OfflinePlayer player, int index) {
         final ItemStack itemStack = new ItemStack(Material.PLAYER_HEAD);
         final SkullMeta itemMeta = (SkullMeta) itemStack.getItemMeta();
         itemMeta.itemName(GlobalTranslator.render(
@@ -71,6 +73,7 @@ public class PlayersGUI extends PaginatedGUI {
                 updatedProfile -> {
                     itemMeta.setPlayerProfile(updatedProfile);
                     itemStack.setItemMeta(itemMeta);
+                    replaceItem(index, itemStack);
                 }, plugin.getServer().getScheduler().getMainThreadExecutor(plugin)
         );
         return itemStack;

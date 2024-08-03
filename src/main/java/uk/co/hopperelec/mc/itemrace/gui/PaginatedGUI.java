@@ -32,6 +32,10 @@ public abstract class PaginatedGUI extends ItemRaceGUI {
         return new ArrayList<>(items);
     }
 
+    public int getNumItems() {
+        return items.size();
+    }
+
     public void setItems(@NotNull Collection<ItemStack> items) {
         this.items = new ArrayList<>(items);
         numPages = Math.max(1, Math.ceilDiv(items.size(), NUM_ITEMS_PER_PAGE));
@@ -44,6 +48,12 @@ public abstract class PaginatedGUI extends ItemRaceGUI {
         if (items.size() != 1 && numPages % NUM_ITEMS_PER_PAGE == 1) {
             if (page == numPages++) drawNextArrow();
         } else if (page == numPages) getInventory().addItem(item);
+    }
+
+    public void replaceItem(int index, @NotNull ItemStack item) {
+        items.set(index, item);
+        if (index >= (page - 1) * NUM_ITEMS_PER_PAGE && index < page * NUM_ITEMS_PER_PAGE)
+            getInventory().setItem(index % NUM_ITEMS_PER_PAGE, item);
     }
 
     private void draw() {
