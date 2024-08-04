@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.Objects;
 
 public class MaxInventoryPointsHandler extends DepositedItems implements PlayerInventoryListener {
-    public MaxInventoryPointsHandler(ItemRacePlugin plugin) {
+    public MaxInventoryPointsHandler(@NotNull ItemRacePlugin plugin) {
         super(plugin);
     }
 

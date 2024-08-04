@@ -15,4 +15,8 @@ public record ItemType(Material material) {
     public boolean is(@NotNull Material material) {
         return this.material == material;
     }
+
+    public int hashCode() {
+        return material.hashCode();
+    }
 }

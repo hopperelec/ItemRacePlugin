@@ -16,7 +16,7 @@ import static uk.co.hopperelec.mc.itemrace.ItemRaceUtils.isDamaged;
 public class AutoDepositor extends DepositedItems implements PlayerInventoryListener {
     private final Random soundPitchRandomizer = new Random();
 
-    public AutoDepositor(ItemRacePlugin plugin) {
+    public AutoDepositor(@NotNull ItemRacePlugin plugin) {
         super(plugin);
     }
 

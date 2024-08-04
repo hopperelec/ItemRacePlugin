@@ -5,7 +5,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
-import uk.co.hopperelec.mc.itemrace.ItemRaceConfig;
+import uk.co.hopperelec.mc.itemrace.config.ItemRaceConfig;
 import uk.co.hopperelec.mc.itemrace.ItemRacePlugin;
 
 import java.util.Collection;
@@ -13,18 +13,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 public abstract class PointsHandler {
-    protected final ItemRacePlugin plugin;
+    protected final @NotNull ItemRacePlugin plugin;
 
-    public PointsHandler(ItemRacePlugin plugin) {
+    public PointsHandler(@NotNull ItemRacePlugin plugin) {
         this.plugin = plugin;
     }
 
     protected ItemRaceConfig config() { return plugin.config; }
 
-    @NotNull
-    public abstract Map<Material, Integer> getItems(@NotNull OfflinePlayer offlinePlayer);
+    public abstract @NotNull Map<Material, Integer> getItems(@NotNull OfflinePlayer offlinePlayer);
     
-    public Collection<? extends OfflinePlayer> getEligiblePlayers() {
+    public @NotNull Collection<? extends OfflinePlayer> getEligiblePlayers() {
         return plugin.getServer().getOnlinePlayers();
     }
 
@@ -32,8 +31,8 @@ public abstract class PointsHandler {
     public void onDisable() {}
 
     public int calculateScore(@NotNull OfflinePlayer player) {
-        return getItems(player).values().stream()
-                .map(config()::pointsForAmount)
+        return getItems(player).entrySet().stream()
+                .map(entry -> config().calculatePointsFor(entry.getValue(), entry.getKey()))
                 .reduce(0, Integer::sum);
     }
     

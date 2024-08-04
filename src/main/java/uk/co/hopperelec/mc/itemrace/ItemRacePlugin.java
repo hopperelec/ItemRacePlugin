@@ -10,8 +10,8 @@ import net.kyori.adventure.util.UTF8ResourceBundleControl;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scoreboard.DisplaySlot;
 import org.jetbrains.annotations.NotNull;
+import uk.co.hopperelec.mc.itemrace.config.ItemRaceConfig;
 import uk.co.hopperelec.mc.itemrace.listeners.GUIListener;
 import uk.co.hopperelec.mc.itemrace.listeners.OnlineEligiblePlayerListener;
 import uk.co.hopperelec.mc.itemrace.pointshandling.*;
@@ -41,28 +41,7 @@ public final class ItemRacePlugin extends JavaPlugin {
 
         // Load config
         saveDefaultConfig();
-        config = new ItemRaceConfig(
-                PointsAwardMode.valueOf(Objects.requireNonNull(getConfig().getString("points.award_mode")).toUpperCase()),
-                getConfig().getInt("points.items_per_point_growth_rate"),
-                getConfig().getBoolean("points.award_for_first_item"),
-                getConfig().getInt("points.max_per_item_type"),
-                getConfig().getBoolean("deposited_items.persist"),
-                (int)(getConfig().getDouble("deposited_items.autosave_frequency") * 60 * 20),
-                getConfig().getBoolean("deposited_items.gui.split_into_stacks"),
-                getConfig().getBoolean("scoreboard.default_state"),
-                switch (Objects.requireNonNull(getConfig().getString("scoreboard.display_slot")).toUpperCase()) {
-                    case "SIDEBAR" -> DisplaySlot.SIDEBAR;
-                    case "BELOW_NAME" -> DisplaySlot.BELOW_NAME;
-                    case "PLAYER_LIST" -> DisplaySlot.PLAYER_LIST;
-                    default -> throw new IllegalStateException("scoreboard.display_slot must be one of SIDEBAR, BELOW_NAME or PLAYER_LIST");
-                },
-                getConfig().getStringList("denylist.items").stream()
-                        .map(ItemType::new)
-                        .toArray(ItemType[]::new),
-                getConfig().getBoolean("denylist.treat_as_allowlist"),
-                getConfig().getBoolean("denylist.allow_damaged_tools")
-        );
-
+        config = new ItemRaceConfig(getConfig());
         pointsHandler = switch (config.pointsAwardMode) {
             case AUTO_DEPOSIT_ALL, AUTO_DEPOSIT -> new AutoDepositor(this);
             case DEPOSIT_COMMAND, DEPOSIT_GUI -> new DepositedItems(this, true);

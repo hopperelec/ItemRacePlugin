@@ -40,6 +40,39 @@ points:
   #  players will be prevented from depositing more items than they can be awarded points for.
   max_per_item_type: -1
 
+  # List "modifier" which determine how many points are awarded for specific items.
+  # For each modifier, you must:
+  # - list one or more items (for a list of item names, see https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Material.html)
+  # - list one or more changes to make to the points awarded for those items.
+  # Each change must specify `type` and `value` and can optionally specify `min_items` and `max_items`
+  #
+  # `type` must be one of either:
+  # - fixed: Players specifically get `value` points for this item
+  # - add: Players get `value` points added on to the number of points they would otherwise get
+  # - multiply: The number of points a player gets for this item is multiplied by `value`
+  #
+  # If `min_items` and/or `max_items` are specified,
+  # the change only applies to items within that range;
+  # otherwise it will apply to all items.
+  #
+  # If a modifier has multiple changes which apply within the same range,
+  # they are applied in the order they are listed here
+  modifiers:
+  # Example modifier: Award double points for all minerals, and a bonus 5 points for a stack of each mineral.
+  #- items:
+  #  - IRON_INGOT
+  #  - GOLD_INGOT
+  #  - DIAMOND
+  #  - EMERALD
+  #  - NETHERITE_INGOT
+  #  changes:
+  #  - type: multiply
+  #    value: 2
+  #  - type: add
+  #    value: 5
+  #    min_items: 64
+  #    max_items: 64
+
 
 # These options have no effect if `points.award_mode` is `INVENTORY` or `ENDER_CHEST`
 deposited_items:

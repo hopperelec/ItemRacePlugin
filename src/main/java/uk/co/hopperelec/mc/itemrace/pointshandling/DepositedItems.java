@@ -83,7 +83,7 @@ public class DepositedItems extends PointsHandler {
     }
 
     @Override
-    public Collection<? extends OfflinePlayer> getEligiblePlayers() {
+    public @NotNull Collection<? extends OfflinePlayer> getEligiblePlayers() {
         return items.keySet().stream().map(plugin.getServer()::getOfflinePlayer).toList();
     }
 
