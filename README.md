@@ -15,8 +15,13 @@ Players can also deposit items directly into their ItemRace inventory using:
 - `/itemrace deposit inventory`: deposit all items in their inventory, regardless of type
 - `/itemrace deposit (amount)`: deposit `amount` of the type of item in their hand from their inventory
 - `/itemrace deposit (amount) (item)`: deposit `amount` of `item` from their inventory
+
+Players can also create a list of items which get automatically deposited as soon as they enter their own inventory
 - `/itemrace autodeposit`: opens a GUI to toggle which items to auto-deposit
-- `/itemrace autodeposit (item)`: toggles whether to auto-deposit `item`
+  
+  ![Auto-deposit GUI - Double Chest UI with title "Auto-deposit items", containing many items with some of them enchanted, and one button at the bottom](screenshots/auto-deposit-gui.webp)
+- `/itemrace autodeposit add (item)`: starts auto-depositing `item`
+- `/itemrace autodeposit remove (item)`: stops auto-depositing `item`
 
 Players are scored based on the items currently in their ItemRace inventory. Players will gain one point each time the amount of a type of item they have doubles. That is, they will get a point for their 1st, 2nd, 4th, 8th, 16th, 32nd, 64th, 128th... item of each type, with no limit. For example, if a player deposits 128 dirt and 4 cobblestone, they will earn 11 points (8 points for dirt and 3 points for cobblestone).
 
@@ -30,13 +35,11 @@ or using the sidebar which can be toggled using `/itemrace togglescoreboard`.
 
 Players can view each other's ItemRace inventories using `/itemrace inventory`, which will open up a paginated GUI listing deposited items.
 
-<!-- TODO: Update screenshot -->
-![Inventory GUI - Double chest with title "hopperelec's ItemRace inventory" and with two buttons on the bottom, one named "Next page"](screenshots/deposited-items-gui.webp)
+![Inventory GUI - Double chest with title "hopperelec's deposited items" and with two buttons on the bottom, one named "Next page"](screenshots/deposited-items-gui.webp)
 
 From the deposited items GUI, players can also access a list of other players for whom to view the deposited items.
 
-<!-- TODO: Update screenshot -->
-![Players GUI - Double chest with title "ItemRace inventories" containing player skulls, one named "View Phantom_RX's ItemRace inventory"](screenshots/players-gui.webp)
+![Players GUI - Double chest with title "ItemRace inventories" containing player skulls, one named "View Phantom_RX's deposited items"](screenshots/players-gui.webp)
 
 
 ## Point award modes
