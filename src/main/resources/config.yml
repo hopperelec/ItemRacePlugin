@@ -76,8 +76,8 @@ points:
 
 # These options have no effect if `points.award_mode` is `INVENTORY` or `ENDER_CHEST`
 deposited_items:
-  # Whether deposited items should persist between server restarts (true/false)
-  # If this is true, deposited items will be saved to a file alongside this config when the server shuts down
+  # Whether deposited items and auto-deposit lists should persist between server restarts (true/false)
+  # If this is true, deposited items and auto-deposit lists will be saved to a file alongside this config when the server shuts down.
   persist: true
 
   # How often, in minutes, deposited items should be auto-saved (number)
@@ -90,6 +90,14 @@ deposited_items:
     # - split an item type into multiple ordinary stacks (true)
     # - combine them into one large stack, showing as up to 99 items (false)
     split_into_stacks: false
+
+  # List of items to include in all players' auto-deposit lists by default.
+  # For a list of item names, see https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Material.html
+  # Keep in mind that:
+  # - auto-deposit lists only work for players with the `itemrace.autodeposit` permission.
+  # - players can toggle these items for themselves using `/itemrace autodeposit`
+  default_auto_deposit:
+    #- DIRT
 
 
 # NOTE: Currently, the scoreboard does not work if `points.award_mode is `INVENTORY` OR `ENDER_CHEST`

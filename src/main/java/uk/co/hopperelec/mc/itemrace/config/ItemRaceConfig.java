@@ -12,6 +12,7 @@ import uk.co.hopperelec.mc.itemrace.pointshandling.PointsAwardMode;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static uk.co.hopperelec.mc.itemrace.ItemRaceUtils.isDamaged;
@@ -28,6 +29,7 @@ public class ItemRaceConfig {
     public final boolean persistDepositedItems;
     public final int autosaveFrequencyTicks;
     public final boolean splitItemsIntoStacks;
+    public final @NotNull Set<Material> defaultAutoDeposit;
     // Scoreboard
     public final boolean defaultScoreboardState;
     public final @NotNull DisplaySlot scoreboardDisplaySlot;
@@ -90,6 +92,10 @@ public class ItemRaceConfig {
         persistDepositedItems = configFile.getBoolean("deposited_items.persist");
         autosaveFrequencyTicks = (int)(configFile.getDouble("deposited_items.autosave_frequency") * 60 * 20);
         splitItemsIntoStacks = configFile.getBoolean("deposited_items.gui.split_into_stacks");
+        defaultAutoDeposit = configFile.getStringList("deposited_items.default_auto_deposit").stream()
+                .map(Material::valueOf)
+                .filter(Material::isItem)
+                .collect(Collectors.toUnmodifiableSet());
 
         // Scoreboard
         defaultScoreboardState = configFile.getBoolean("scoreboard.default_state");

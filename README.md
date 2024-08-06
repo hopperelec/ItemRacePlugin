@@ -15,6 +15,8 @@ Players can also deposit items directly into their ItemRace inventory using:
 - `/itemrace deposit inventory`: deposit all items in their inventory, regardless of type
 - `/itemrace deposit (amount)`: deposit `amount` of the type of item in their hand from their inventory
 - `/itemrace deposit (amount) (item)`: deposit `amount` of `item` from their inventory
+- `/itemrace autodeposit`: opens a GUI to toggle which items to auto-deposit
+- `/itemrace autodeposit (item)`: toggles whether to auto-deposit `item`
 
 Players are scored based on the items currently in their ItemRace inventory. Players will gain one point each time the amount of a type of item they have doubles. That is, they will get a point for their 1st, 2nd, 4th, 8th, 16th, 32nd, 64th, 128th... item of each type, with no limit. For example, if a player deposits 128 dirt and 4 cobblestone, they will earn 11 points (8 points for dirt and 3 points for cobblestone).
 
@@ -79,7 +81,7 @@ These are how the plugin chooses which items to award points for.
 </details>
 
 ## ItemRace inventory persisting
-For award modes which use the ItemRace inventory (which does not include INVENTORY or ENDER_CHEST), the plugin is able to persist (and auto-save at a configurable interval) the contents of each player's ItemRace inventory between server restarts. This data is saved to the file `plugins/ItemRace/deposited-items.yml`.
+For award modes which use the ItemRace inventory (which does not include INVENTORY or ENDER_CHEST), the plugin is able to persist (and auto-save at a configurable interval) the contents of each player's ItemRace inventory (and autodeposit list) between server restarts. This data is saved to the file `plugins/ItemRace/data.yml`.
 
 ## Permissions
 - **itemrace.admin:** Permission to use all ItemRace admin commands
@@ -89,3 +91,4 @@ For award modes which use the ItemRace inventory (which does not include INVENTO
 - **itemrace.inventory.self *(default)*:** Allows viewing your own ItemRace inventory using `/itemrace inventory`
 - **itemrace.leaderboard *(default)*:** Allows viewing the ItemRace leaderboard using `/itemrace leaderboard`
 - **itemrace.togglescoreboard:** Allows toggling the scoreboard using `/itemrace togglescoreboard`
+- **itemrace.autodeposit *(default)*:** Allows creating a list of items to auto-deposit on a per-player basis using `/itemrace autodeposit`

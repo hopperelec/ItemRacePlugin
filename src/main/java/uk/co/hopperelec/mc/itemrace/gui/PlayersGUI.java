@@ -30,7 +30,7 @@ public class PlayersGUI extends PaginatedGUI {
     @Override
     public void onClick(@NotNull InventoryClickEvent event) {
         super.onClick(event);
-        if (event.getSlot() < 45 && event.getClick().isMouseClick()) {
+        if (event.getSlot() < NUM_ITEMS_PER_PAGE && event.getClick().isMouseClick()) {
             final ItemStack itemStack = event.getCurrentItem();
             if (itemStack != null && itemStack.getItemMeta() instanceof SkullMeta skullMeta)
                 new DepositedItemsGUI(plugin, viewer, Objects.requireNonNull(skullMeta.getOwningPlayer()));

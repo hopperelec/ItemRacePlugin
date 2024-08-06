@@ -1,4 +1,4 @@
-package uk.co.hopperelec.mc.itemrace.pointshandling;
+package uk.co.hopperelec.mc.itemrace.pointshandling.autodeposit;
 
 import org.bukkit.GameMode;
 import org.bukkit.Sound;
@@ -8,12 +8,11 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import uk.co.hopperelec.mc.itemrace.ItemRacePlugin;
 import uk.co.hopperelec.mc.itemrace.listeners.PlayerInventoryListener;
+import uk.co.hopperelec.mc.itemrace.pointshandling.DepositedItems;
 
 import java.util.Random;
 
-import static uk.co.hopperelec.mc.itemrace.ItemRaceUtils.isDamaged;
-
-public class AutoDepositor extends DepositedItems implements PlayerInventoryListener {
+public abstract class AutoDepositor extends DepositedItems implements PlayerInventoryListener {
     private final Random soundPitchRandomizer = new Random();
 
     public AutoDepositor(@NotNull ItemRacePlugin plugin) {
@@ -32,21 +31,7 @@ public class AutoDepositor extends DepositedItems implements PlayerInventoryList
     }
 
     // Returns the amount deposited
-    private int autoDeposit(@NotNull Player player, @NotNull ItemStack itemStack) {
-        if (plugin.config.pointsAwardMode == PointsAwardMode.AUTO_DEPOSIT_ALL) {
-            tryDeposit(player, itemStack);
-            return itemStack.getAmount();
-        }
-        if (!config().allowDamagedTools && isDamaged(itemStack)) return 0;
-        final int amount = Math.min(itemStack.getAmount(), numberOfItemsLeftToMax(player, itemStack.getType()));
-        if (amount != 0)
-            try {
-                deposit(player, itemStack.getType(), amount);
-            } catch (IllegalArgumentException e) {
-                return 0;
-            }
-        return amount;
-    }
+    protected abstract int autoDeposit(@NotNull Player player, @NotNull ItemStack itemStack);
 
     public void onMoveToInventory(@NotNull Player player, @NotNull ItemStack itemStack) {
         itemStack.setAmount(itemStack.getAmount() - autoDeposit(player, itemStack));

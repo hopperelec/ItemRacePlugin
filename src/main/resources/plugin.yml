@@ -34,3 +34,6 @@ permissions:
     default: true
   itemrace.togglescoreboard:
     description: Allows toggling the scoreboard using `/itemrace togglescoreboard`
+  itemrace.autodeposit:
+    description: Allows creating a list of items to auto-deposit on a per-player basis using `/itemrace autodeposit`
+    default: true

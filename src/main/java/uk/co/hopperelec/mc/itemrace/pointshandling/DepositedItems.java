@@ -27,14 +27,9 @@ public class DepositedItems extends PointsHandler {
     public Scoreboard scoreboard;
     public Objective scoreboardObjective;
     private final Map<UUID, Map<Material, Integer>> items = new HashMap<>();
-    private final File FILE = new File(plugin.getDataFolder(), "deposited_items.yml");
-    public boolean throwIfOverDeposit = false;
+    private final String DATA_FILE_NAME = "data.yml";
+    private final File DATA_FILE = new File(plugin.getDataFolder(), DATA_FILE_NAME);
     
-    public DepositedItems(@NotNull ItemRacePlugin plugin, boolean throwIfOverDeposit) {
-        super(plugin);
-        this.throwIfOverDeposit = throwIfOverDeposit;
-    }
-
     public DepositedItems(@NotNull ItemRacePlugin plugin) {
         super(plugin);
     }
@@ -53,19 +48,9 @@ public class DepositedItems extends PointsHandler {
             plugin.getServer().getPluginManager().registerEvents(new ShowScoreboardListener(scoreboard), plugin);
         }
 
-        if (config().persistDepositedItems && FILE.exists()) {
+        if (config().persistDepositedItems && DATA_FILE.exists()) {
             // Load persisted deposited items
-            YamlConfiguration.loadConfiguration(FILE).getValues(false).forEach((uuidString, serializedInventory) -> {
-                final UUID uuid = UUID.fromString(uuidString);
-                ((ConfigurationSection) serializedInventory).getValues(false).forEach(
-                        (material, amount) -> trySetAmount(
-                                uuid,
-                                Material.valueOf(material),
-                                (int) amount
-                        )
-                );
-                refreshScoreboard(plugin.getServer().getOfflinePlayer(uuid));
-            });
+            deserializeData(YamlConfiguration.loadConfiguration(DATA_FILE));
 
             // Start auto-saving deposited items
             if (config().autosaveFrequencyTicks > 0)
@@ -94,15 +79,36 @@ public class DepositedItems extends PointsHandler {
 
     public void save() {
         final YamlConfiguration serializedFile = new YamlConfiguration();
-        items.forEach((uuid, inventory) -> {
-            final ConfigurationSection serializedInventory = serializedFile.createSection(uuid.toString());
-            inventory.forEach((material, amount) -> serializedInventory.set(material.name(), amount));
-        });
+        serializeData(serializedFile);
         try {
-            serializedFile.save(FILE);
+            serializedFile.save(DATA_FILE);
         } catch (IOException e) {
-            plugin.getLogger().warning("Failed to save deposited_items.yml: "+e.getMessage());
+            plugin.getLogger().warning("Failed to save "+ DATA_FILE_NAME +": "+e.getMessage());
         }
+    }
+
+    protected void serializeData(@NotNull YamlConfiguration data) {
+        final ConfigurationSection serializedDepositedItems = data.createSection("deposited_items");
+        items.forEach((uuid, depositedItems) -> {
+            final ConfigurationSection serializedInventory = serializedDepositedItems.createSection(uuid.toString());
+            depositedItems.forEach((material, amount) -> serializedInventory.set(material.toString(), amount));
+        });
+    }
+
+    protected void deserializeData(@NotNull YamlConfiguration data) {
+        final ConfigurationSection serializedDepositedItems = data.getConfigurationSection("deposited_items");
+        if (serializedDepositedItems == null) return;
+        serializedDepositedItems.getValues(false).forEach((uuidString, serializedInventory) -> {
+            final UUID uuid = UUID.fromString(uuidString);
+            ((ConfigurationSection) serializedInventory).getValues(false).forEach(
+                    (material, amount) -> trySetAmount(
+                            uuid,
+                            Material.valueOf(material),
+                            (int) amount
+                    )
+            );
+            refreshScoreboard(plugin.getServer().getOfflinePlayer(uuid));
+        });
     }
 
     public void deposit(@NotNull OfflinePlayer player, @NotNull Material itemType, int amount) {
@@ -136,7 +142,7 @@ public class DepositedItems extends PointsHandler {
         return items.containsKey(uuid) ? items.get(uuid).getOrDefault(itemType, 0) : 0;
     }
 
-    private void setAmount(@NotNull UUID uuid, @NotNull Material itemType, int amount) {
+    protected void setAmount(@NotNull UUID uuid, @NotNull Material itemType, int amount) {
         if (amount < 0)
             throw new IllegalArgumentException("Amount cannot be negative");
         if (!config().awardPointsFor(itemType))
@@ -146,8 +152,6 @@ public class DepositedItems extends PointsHandler {
         else if (amount == 0)
             items.get(uuid).remove(itemType);
         items.get(uuid).put(itemType, Math.min(amount, config().maxItemsAwardedPoints));
-        if (throwIfOverDeposit && amount > config().maxItemsAwardedPoints)
-            throw new IllegalArgumentException("Amount exceeds maxItemsAwardedPoints");
     }
     public void setAmount(@NotNull OfflinePlayer player, @NotNull Material itemType, int amount) {
         boolean isNew = !items.containsKey(player.getUniqueId());

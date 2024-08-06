@@ -10,9 +10,11 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import uk.co.hopperelec.mc.itemrace.gui.AutoDepositItemsGUI;
 import uk.co.hopperelec.mc.itemrace.gui.DepositGUI;
 import uk.co.hopperelec.mc.itemrace.gui.DepositedItemsGUI;
 import uk.co.hopperelec.mc.itemrace.pointshandling.DepositedItems;
+import uk.co.hopperelec.mc.itemrace.pointshandling.ManualDepositHandler;
 import uk.co.hopperelec.mc.itemrace.pointshandling.PointsAwardMode;
 
 import java.util.Comparator;
@@ -167,13 +169,13 @@ public class ItemRaceCommand extends BaseCommand {
     }
 
     @Subcommand("deposit|dep")
-    @CommandCompletion("all|inventory @itemType")
+    @CommandCompletion("all|inventory @depItemType")
     @CommandPermission("itemrace.deposit")
     public void onDeposit(
         @NotNull Player player,
         @Optional @Name("amount") String amountStr, @Optional @Name("item") ItemType itemType
     ) {
-        if (!(plugin.pointsHandler instanceof DepositedItems depositedItems)) {
+        if (!(plugin.pointsHandler instanceof ManualDepositHandler depositedItems)) {
             player.sendMessage(Component.translatable("command.deposit.disabled"));
             return;
         }
@@ -218,6 +220,45 @@ public class ItemRaceCommand extends BaseCommand {
 
             onDeposit(player, depositedItems, amountInt, material, itemType == null && amountStr == null);
         }
+    }
+
+    @Subcommand("autodeposit|autodep")
+    @CommandCompletion("add|remove @autoDepItemType")
+    @CommandPermission("itemrace.autodeposit")
+    public void onAutoDeposit(@NotNull Player player, @Optional String addRemove, @Optional @Name("item") ItemType itemType) {
+        if (!(plugin.pointsHandler instanceof ManualDepositHandler manualDepositHandler)) {
+            player.sendMessage(Component.translatable("command.deposit.disabled"));
+            return;
+        }
+        if (addRemove == null) {
+            new AutoDepositItemsGUI(plugin, player);
+            return;
+        }
+
+        final boolean add;
+        if (addRemove.equals("add")) {
+            add = true;
+        } else if (addRemove.equals("remove")) {
+            add = false;
+        } else {
+            player.sendMessage(Component.translatable("command.autodeposit.invalid_addremove",
+                    Component.text(addRemove)
+            ));
+            return;
+        }
+
+        if (itemType == null) {
+            player.sendMessage(Component.translatable("command.autodeposit."+(add ? "add" : "remove")+".missing_itemtype"));
+            return;
+        }
+
+        final boolean success;
+        if (add) success = manualDepositHandler.addAutoDepositItem(player, itemType.material());
+        else success = manualDepositHandler.removeAutoDepositItem(player, itemType.material());
+        player.sendMessage(Component.translatable(
+                "command.autodeposit."+(add ? "add" : "remove")+"."+(success ? "success" : "failure"),
+                Component.translatable(itemType.material().translationKey())
+        ));
     }
 
     @Subcommand("inventory|inv")
