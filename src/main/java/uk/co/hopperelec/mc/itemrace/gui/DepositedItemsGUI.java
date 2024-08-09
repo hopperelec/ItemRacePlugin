@@ -13,6 +13,8 @@ import uk.co.hopperelec.mc.itemrace.ItemRacePlugin;
 
 import java.util.*;
 
+import static uk.co.hopperelec.mc.itemrace.ItemRaceUtils.itemNameContains;
+
 public class DepositedItemsGUI extends PaginatedGUI {
     public final @NotNull OfflinePlayer player;
     public final static int PLAYERS_BUTTON_SLOT = 45;
@@ -22,9 +24,12 @@ public class DepositedItemsGUI extends PaginatedGUI {
             @NotNull Player viewer,
             @NotNull OfflinePlayer player
     ) {
-        super(plugin, viewer, Component.translatable("gui.deposited_items.title",
-                Component.text(Objects.requireNonNull(player.getName()))
-        ));
+        super(
+                plugin, viewer,
+                Component.translatable("gui.deposited_items.title",
+                    Component.text(Objects.requireNonNull(player.getName()))
+                ), Component.translatable("gui.items.search.title")
+        );
         this.player = player;
 
         final boolean canViewOtherInventories = viewer.hasPermission("itemrace.inventory");
@@ -47,6 +52,11 @@ public class DepositedItemsGUI extends PaginatedGUI {
     @Override
     public void onRefreshDepositedItems(@NotNull OfflinePlayer player) {
         if (this.player == player) setItems();
+    }
+
+    @Override
+    public boolean filter(@NotNull ItemStack itemStack, @NotNull String query) {
+        return itemNameContains(itemStack.getType(), query, viewer.locale());
     }
 
     private void setItems() {

@@ -18,7 +18,11 @@ public abstract class ItemRaceGUI implements InventoryHolder {
     public ItemRaceGUI(@NotNull ItemRacePlugin plugin, @NotNull Player viewer, int slots, @NotNull Component title) {
         this.plugin = plugin;
         this.viewer = viewer;
-        inventory = plugin.getServer().createInventory(this, slots, title);
+        this.inventory = plugin.getServer().createInventory(this, slots, title);
+        show();
+    }
+
+    public void show() {
         viewer.openInventory(inventory);
         plugin.guiListener.registerGUI(this);
     }

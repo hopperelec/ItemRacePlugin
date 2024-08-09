@@ -13,6 +13,8 @@ import uk.co.hopperelec.mc.itemrace.pointshandling.ManualDepositHandler;
 import java.util.Arrays;
 import java.util.Set;
 
+import static uk.co.hopperelec.mc.itemrace.ItemRaceUtils.itemNameContains;
+
 public class AutoDepositItemsGUI extends PaginatedGUI {
     private final @NotNull ManualDepositHandler manualDepositHandler;
 
@@ -20,7 +22,11 @@ public class AutoDepositItemsGUI extends PaginatedGUI {
             @NotNull ItemRacePlugin plugin,
             @NotNull Player viewer
     ) {
-        super(plugin, viewer, Component.translatable("gui.auto_deposit_items.title"));
+        super(
+                plugin, viewer,
+                Component.translatable("gui.auto_deposit_items.title"),
+                Component.translatable("gui.items.search.title")
+        );
         if (!(plugin.pointsHandler instanceof ManualDepositHandler))
             throw new IllegalStateException("Auto-deposit items GUI is only available when using a manual points award mode");
         this.manualDepositHandler = (ManualDepositHandler) plugin.pointsHandler;
@@ -54,5 +60,10 @@ public class AutoDepositItemsGUI extends PaginatedGUI {
                 itemStack.setItemMeta(itemMeta);
             }
         }
+    }
+
+    @Override
+    public boolean filter(@NotNull ItemStack itemStack, @NotNull String query) {
+        return itemNameContains(itemStack.getType(), query, viewer.locale());
     }
 }

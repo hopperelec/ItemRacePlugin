@@ -16,7 +16,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class PlayersGUI extends PaginatedGUI {
     public PlayersGUI(@NotNull ItemRacePlugin plugin, @NotNull Player viewer) {
-        super(plugin, viewer, Component.translatable("gui.players.title"));
+        super(
+                plugin, viewer,
+                Component.translatable("gui.players.title"),
+                Component.translatable("gui.players.search.title")
+        );
         final AtomicInteger index = new AtomicInteger();
         setItems(
                 plugin.pointsHandler.getEligiblePlayers().stream()
@@ -39,7 +43,7 @@ public class PlayersGUI extends PaginatedGUI {
 
     @Override
     public void onAddEligiblePlayer(@NotNull OfflinePlayer player) {
-        addItem(createSkull(player, getNumItems()));
+        addItem(createSkull(player, getTotalNumItems()));
     }
 
     @Override
@@ -55,6 +59,15 @@ public class PlayersGUI extends PaginatedGUI {
             }
         }
         setItems(newItems);
+    }
+
+    @Override
+    public boolean filter(@NotNull ItemStack itemStack, @NotNull String query) {
+        final OfflinePlayer skullOwner = ((SkullMeta) itemStack.getItemMeta()).getOwningPlayer();
+        if (skullOwner == null) return true;
+        final String skullOwnerName = skullOwner.getName();
+        if (skullOwnerName == null) return true;
+        return skullOwnerName.toLowerCase().contains(query);
     }
 
     private @NotNull ItemStack createSkull(@NotNull OfflinePlayer player, int index) {
