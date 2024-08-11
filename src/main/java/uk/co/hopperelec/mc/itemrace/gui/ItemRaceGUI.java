@@ -23,7 +23,12 @@ public abstract class ItemRaceGUI implements InventoryHolder {
     }
 
     public void show() {
-        viewer.openInventory(inventory);
+        // Bukkit warns against opening an inventory from InventoryClickEvent without using `runTask`.
+        // (see https://github.com/Bukkit/Bukkit/blob/f210234e59275330f83b994e199c76f6abd41ee7/src/main/java/org/bukkit/event/inventory/InventoryClickEvent.java#L17-L33)
+        // `runTask` also seems necessary for re-opening a GUI from the AnvilGUI's onClose.
+        // (see https://github.com/WesJD/AnvilGUI/issues/348)
+        // Rather than using `runTask` when constructing each GUI, I've just used it here to avoid future headache.
+        plugin.getServer().getScheduler().runTask(plugin, () -> viewer.openInventory(inventory));
         plugin.guiListener.registerGUI(this);
     }
 

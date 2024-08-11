@@ -184,8 +184,7 @@ public abstract class PaginatedGUI extends ItemRaceGUI {
                         .onClick((slot, stateSnapshot) -> List.of())
                         .onClose(stateSnapshot -> {
                             search(stateSnapshot.getText());
-                            // Not sure why but, if I don't delay this, then GUIListener isn't able to register itself
-                            plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, this::show);
+                            show();
                         })
                         .open(viewer);
             }
